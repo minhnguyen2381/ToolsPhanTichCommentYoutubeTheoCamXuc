@@ -20,9 +20,10 @@ def chart_keyword_summary():
                  text="top50_total_views")
     fig.write_html(REPORT_DIR / "keyword_views.html")
 
-    fig2 = px.bar(df, x="keyword", y="total_results",
-                  title="Tổng số video tìm được trên YouTube")
-    fig2.write_html(REPORT_DIR / "keyword_total_results.html")
+    fig2 = px.bar(df, x="keyword", y="top50_total_comments",
+                  title="Tổng số bình luận top-50 video theo từ khoá",
+                  text="top50_total_comments")
+    fig2.write_html(REPORT_DIR / "keyword_total_comments.html")
     print("[OK] Đã xuất report/keyword_*.html")
 
 
