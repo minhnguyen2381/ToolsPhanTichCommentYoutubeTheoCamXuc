@@ -9,10 +9,6 @@ __pycache__/
 venv/
 env/
 
-# Data cache (tuỳ chọn — có thể bật nếu không muốn commit dữ liệu)
-# data/
-# report/
-
 # IDE
 .vscode/
 .idea/
