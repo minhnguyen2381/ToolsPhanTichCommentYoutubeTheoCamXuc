@@ -1,47 +1,32 @@
-# Quản Lý Quota YouTube Data API v3
+# Quota — Không áp dụng
 
-## 1. Giới hạn mặc định
+Pipeline đã chuyển sang dùng `yt-dlp` + `youtube-comment-downloader`, **không gọi YouTube Data API v3**, nên không bị giới hạn 10.000 units/ngày của Google Cloud.
 
-- **10.000 units / ngày / project** (reset 00:00 Pacific Time).
-- Yêu cầu thêm quota qua form trên Google Cloud Console (có thể chờ vài ngày).
+## Đánh đổi
 
-## 2. Chi phí từng endpoint
+| Hạng mục | API v3 (cũ) | yt-dlp + ycd (mới) |
+|----------|-------------|--------------------|
+| Cần API key | Có (Google Cloud) | Không |
+| Giới hạn quota | 10.000 units/ngày | Không có quota cứng |
+| Tốc độ lấy stats | Batch 50 video / 1 call | Phải gọi từng video |
+| Trường `total_results` | Có | **Không** (đã bỏ) |
+| Rủi ro bị chặn IP | Thấp | Có (nếu chạy quá nhiều/quá nhanh) |
 
-| Endpoint | Units / call |
-|----------|--------------|
-| `search.list` | **100** |
-| `videos.list` | 1 |
-| `playlistItems.list` | 1 |
-| `commentThreads.list` | 1 |
-| `channels.list` | 1 |
+## Khi bị chặn / bot detection
 
-## 3. Ước tính cho dự án
+YouTube đôi khi yêu cầu xác thực nếu phát hiện scraping bất thường. Triệu chứng: yt-dlp trả lỗi `Sign in to confirm you're not a bot`.
 
-### Bước 1 — Keyword stats
-- 4 keyword × 1 `search.list` = **400 units**
-- 4 × 1 `videos.list` = **4 units**
-- **Tổng: ~404 units**
+Cách xử lý:
+1. Giảm tần suất / thêm `time.sleep` giữa các call.
+2. Dùng cookies trình duyệt:
+   ```bash
+   yt-dlp --cookies-from-browser chrome <url>
+   ```
+   (Áp dụng cho code: thêm `cookiesfrombrowser=("chrome",)` vào `_BASE_OPTS` trong `src/youtube_client.py`.)
+3. Đổi IP / dùng VPN nếu IP bị flag.
 
-### Bước 2 — Crawl playlist (15 video)
-- 1 `playlistItems.list` = **1 unit**
-- 15 × ~5 pages `commentThreads.list` = **~75 units**
-- **Tổng: ~76 units**
+## Mẹo tiết kiệm thời gian
 
-→ Một lần chạy đầy đủ tiêu tốn **~500 units** (5% quota ngày).
-
-## 4. Mẹo tiết kiệm quota
-
-1. **Cache kết quả**: lưu CSV, không crawl lại khi dev.
-2. **Hạn chế `search.list`**: mỗi call tốn 100 units — nhiều nhất trong pipeline.
-3. **Pagination hợp lý**: `max_pages=20` trong `step2` là giới hạn an toàn.
-4. **Chạy đêm VN**: trùng rush-hour bên Mỹ ít → ít lỗi 403.
-
-## 5. Khi hết quota
-
-- Lỗi: `quotaExceeded` (HTTP 403).
-- Chờ reset (00:00 PT ~ 15:00 VN) hoặc dùng API key của project khác.
-- Cân nhắc xin tăng quota (form [Google Cloud](https://support.google.com/youtube/contact/yt_api_form)).
-
-## 6. Monitoring
-
-Vào Google Cloud Console → **APIs & Services → YouTube Data API v3 → Quotas** để xem mức tiêu thụ realtime.
+1. **Cache CSV**: dữ liệu đã crawl thì không crawl lại khi dev.
+2. Hạn chế chạy lại `step1` — kết quả search ổn định trong vài ngày.
+3. Có thể giảm `MAX_COMMENTS_PER_VIDEO` trong `step2_crawl_comments.py` nếu chỉ cần lấy mẫu.

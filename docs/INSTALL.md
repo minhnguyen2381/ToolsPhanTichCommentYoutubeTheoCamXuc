@@ -60,30 +60,26 @@ pip install torch --index-url https://download.pytorch.org/whl/cu118
 
 ---
 
-## 4. Lấy YouTube Data API Key
+## 4. Cấu hình `.env`
 
-1. Truy cập <https://console.cloud.google.com/>.
-2. Tạo project mới (hoặc dùng project sẵn có).
-3. Vào **APIs & Services → Library**, tìm **"YouTube Data API v3"** → **Enable**.
-4. Vào **APIs & Services → Credentials → + Create Credentials → API Key**.
-5. Copy key, dán vào `.env`:
+Pipeline **không cần API key**: dữ liệu YouTube được lấy qua `yt-dlp` và `youtube-comment-downloader` (thư viện cào dữ liệu công khai, không tính quota).
 
 ```bash
 cp .env.example .env
-# Sửa .env, thay YOUR_API_KEY_HERE bằng key thật
+# Mở .env, sửa PLAYLIST_ID nếu cần
 ```
 
-> Chi tiết về quota: xem [QUOTA.md](QUOTA.md).
+Biến duy nhất: `PLAYLIST_ID` (tuỳ chọn, mặc định lấy playlist trong source code).
 
 ---
 
 ## 5. Kiểm tra nhanh
 
 ```bash
-python -c "from src.youtube_client import get_client; print('OK:', get_client())"
+python -c "from src.youtube_client import search_videos; print(search_videos('Quan Vũ', 3))"
 ```
 
-Nếu in ra object `Resource` là thành công.
+Nếu in ra danh sách 3 videoId là thành công.
 
 ---
 
