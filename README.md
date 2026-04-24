@@ -5,7 +5,7 @@ Bộ công cụ Python phục vụ 2 mục tiêu:
 1. **Khảo sát mức độ phổ biến** của các từ khoá *Quan Vũ, Quan Vân Trường, Quan Công, Quan Thánh* trên YouTube (số video, lượt xem, like, comment).
 2. **Phân tích sentiment** comment của 15 video trong playlist [`PLlvlc45o3QQcwtas1taX7VlLyZ6Advf_3`](https://www.youtube.com/playlist?list=PLlvlc45o3QQcwtas1taX7VlLyZ6Advf_3) — phân loại Tích cực / Trung tính / Tiêu cực và tính tỷ lệ.
 
-> Tài liệu gốc đặc tả giải pháp: [GIAI_PHAP_PYTHON.md](GIAI_PHAP_PYTHON.md)
+> Tài liệu gốc đặc tả giải pháp: [GIAI_PHAP_PYTHON.md](solutions/v1_sentiment/GIAI_PHAP_PYTHON.md)
 
 ---
 
