@@ -58,6 +58,7 @@ pip install google-api-python-client python-dotenv pandas \
 - Tổng hợp thành bảng so sánh.
 
 ### 3.2. Code mẫu (`step1_keyword_stats.py`)
+
 ```python
 import os
 from googleapiclient.discovery import build
@@ -69,47 +70,50 @@ youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
 
 KEYWORDS = ["Quan Vũ", "Quan Vân Trường", "Quan Công", "Quan Thánh"]
 
+
 def search_keyword(kw, max_results=50):
-    res = youtube.search().list(
-        q=kw, part="id,snippet", type="video",
-        maxResults=max_results, regionCode="VN",
-        relevanceLanguage="vi"
-    ).execute()
-    total = res["pageInfo"]["totalResults"]
-    video_ids = [item["id"]["videoId"] for item in res["items"]]
-    return total, video_ids
+   res = youtube.search().list(
+      q=kw, part="id,snippet", type="video",
+      maxResults=max_results, regionCode="VN",
+      relevanceLanguage="vi"
+   ).execute()
+   total = res["pageInfo"]["totalResults"]
+   video_ids = [item["id"]["videoId"] for item in res["items"]]
+   return total, video_ids
+
 
 def get_video_stats(video_ids):
-    stats = youtube.videos().list(
-        part="statistics,snippet", id=",".join(video_ids)
-    ).execute()
-    rows = []
-    for v in stats["items"]:
-        s = v["statistics"]
-        rows.append({
-            "videoId": v["id"],
-            "title": v["snippet"]["title"],
-            "channel": v["snippet"]["channelTitle"],
-            "views": int(s.get("viewCount", 0)),
-            "likes": int(s.get("likeCount", 0)),
-            "comments": int(s.get("commentCount", 0)),
-        })
-    return pd.DataFrame(rows)
+   stats = youtube.videos().list(
+      part="statistics,snippet", id=",".join(video_ids)
+   ).execute()
+   rows = []
+   for v in stats["items"]:
+      s = v["statistics"]
+      rows.append({
+         "videoId": v["id"],
+         "title": v["snippet"]["title"],
+         "channel": v["snippet"]["channelTitle"],
+         "views": int(s.get("viewCount", 0)),
+         "likes": int(s.get("likeCount", 0)),
+         "comments": int(s.get("commentCount", 0)),
+      })
+   return pd.DataFrame(rows)
+
 
 summary = []
 for kw in KEYWORDS:
-    total, ids = search_keyword(kw)
-    df = get_video_stats(ids)
-    summary.append({
-        "keyword": kw,
-        "total_results": total,
-        "top50_total_views": df["views"].sum(),
-        "top50_avg_views": df["views"].mean(),
-        "top50_total_likes": df["likes"].sum(),
-    })
-    df.to_csv(f"data/keyword_{kw}.csv", index=False, encoding="utf-8-sig")
+   total, ids = search_keyword(kw)
+   df = get_video_stats(ids)
+   summary.append({
+      "keyword": kw,
+      "total_results": total,
+      "top50_total_views": df["views"].sum(),
+      "top50_avg_views": df["views"].mean(),
+      "top50_total_likes": df["likes"].sum(),
+   })
+   df.to_csv(f"data/keyword_{kw}.csv", index=False, encoding="utf-8-sig")
 
-pd.DataFrame(summary).to_csv("data/keyword_summary.csv", index=False, encoding="utf-8-sig")
+pd.DataFrame(summary).to_csv("../../data/keyword_summary.csv", index=False, encoding="utf-8-sig")
 ```
 
 ### 3.3. Output mong muốn
