@@ -1,15 +1,13 @@
-"""BƯỚC 3 (V2): Phân loại sentiment với PhoBERT + lexicon shortcut + confidence gating.
+"""BƯỚC 3 (V3): Phân loại sentiment — domain-aware + post-processing heuristics.
 
-Cải tiến so với V1 (xem `solutions/v2_sentiment/GIAI_PHAP_V2.md`):
-- Verify `id2label` thay vì hardcode thứ tự nhãn.
-- Tiền xử lý mới (`normalize.py`): emoji-as-token, teencode map, gộp ký tự lặp.
-- Lexicon shortcut cho câu ngắn (≤ 5 token) để né dao động của model.
-- Confidence gating: low confidence / margin nhỏ → gán NEU.
-- Batch inference (mặc định 32) thay vì 1 câu/lần.
-- Tuỳ chọn: phục hồi dấu, ensemble với visobert (env flag).
-- Cột mới trong CSV: `source`, `score_neu`, `score_pos`, `score_neg`.
+Cải tiến so với V2 (xem `solutions/v3_sentiment/GIAI_PHAP_V3.md`):
+- CONF_THRESHOLD_NEG riêng biệt (0.75) — NEG cần tự tin hơn.
+- Lexicon shortcut mở rộng ≤ 8 token + từ lóng khen.
+- Post-processing: question detection, history domain, listing detection.
+- Cột mới: `source` ghi rõ lý do flip (vd: `question→NEU`, `domain→NEU`).
 """
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -18,7 +16,10 @@ from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from normalize import normalize, tokenize_for_phobert  # noqa: E402
-from lexicon import LEXICON_POS, LEXICON_NEG  # noqa: E402
+from lexicon import (  # noqa: E402
+    LEXICON_POS, LEXICON_NEG,
+    HISTORY_DOMAIN_KEYWORDS, QUESTION_PATTERNS,
+)
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 MODEL_NAME = "wonrax/phobert-base-vietnamese-sentiment"
@@ -27,23 +28,26 @@ ENSEMBLE_MODEL_NAME = "5CD-AI/Vietnamese-Sentiment-visobert"
 USE_DIACRITIC_RESTORE = os.getenv("USE_DIACRITIC_RESTORE", "0") == "1"
 USE_ENSEMBLE = os.getenv("USE_ENSEMBLE", "0") == "1"
 CONF_THRESHOLD = float(os.getenv("CONF_THRESHOLD", "0.60"))
+CONF_THRESHOLD_NEG = float(os.getenv("CONF_THRESHOLD_NEG", "0.75"))
+DOMAIN_THRESHOLD = float(os.getenv("DOMAIN_THRESHOLD", "0.90"))
 MARGIN_THRESHOLD = float(os.getenv("MARGIN_THRESHOLD", "0.15"))
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "32"))
 MAX_LEN = int(os.getenv("MAX_LEN", "256"))
+LEXICON_MAX_TOKENS = int(os.getenv("LEXICON_MAX_TOKENS", "8"))
 
 
 # ---------------------------------------------------------------------------
-# Lexicon shortcut
+# Lexicon shortcut (V3: mở rộng lên 8 token)
 # ---------------------------------------------------------------------------
 def lexicon_lookup(normalized_text: str):
     """Trả về (label, score) nếu match lexicon, ngược lại None.
 
-    Chỉ áp dụng cho câu ngắn (≤ 5 token sau split khoảng trắng).
+    V3: tăng giới hạn từ 5 → LEXICON_MAX_TOKENS (default 8).
     """
     if not normalized_text:
         return None
     tokens = normalized_text.split()
-    if len(tokens) > 5:
+    if len(tokens) > LEXICON_MAX_TOKENS:
         return None
     txt = normalized_text.strip()
     if txt in LEXICON_POS:
@@ -58,6 +62,86 @@ def lexicon_lookup(normalized_text: str):
             if tk in LEXICON_NEG:
                 return ("NEG", 0.90)
     return None
+
+
+# ---------------------------------------------------------------------------
+# Post-processing heuristics (V3 MỚI)
+# ---------------------------------------------------------------------------
+_QUESTION_MARK_RE = re.compile(r"\?")
+
+
+def _count_domain_hits(normalized_text: str) -> int:
+    """Đếm số lượng HISTORY_DOMAIN_KEYWORDS xuất hiện trong text."""
+    count = 0
+    for kw in HISTORY_DOMAIN_KEYWORDS:
+        if kw in normalized_text:
+            count += 1
+    return count
+
+
+def _is_question(normalized_text: str) -> bool:
+    """Phát hiện câu hỏi dựa trên dấu ? và pattern."""
+    if _QUESTION_MARK_RE.search(normalized_text):
+        return True
+    for pat in QUESTION_PATTERNS:
+        if pat in normalized_text:
+            return True
+    return False
+
+
+def _is_name_listing(normalized_text: str) -> bool:
+    """Phát hiện comment chỉ liệt kê tên nhân vật (ít động từ/tính từ sentiment)."""
+    tokens = normalized_text.split()
+    if len(tokens) < 3:
+        return False
+    domain_hits = _count_domain_hits(normalized_text)
+    # Nếu > 50% tokens là tên nhân vật → listing
+    if domain_hits >= 3 and domain_hits >= len(tokens) * 0.3:
+        return True
+    return False
+
+
+def postprocess_label(label: str, score: float, probs: list,
+                      normalized_text: str, source: str):
+    """Áp dụng V3 heuristics sau khi model predict.
+
+    Trả về (label, source) đã được điều chỉnh.
+    Chỉ can thiệp khi label == "NEG".
+
+    probs = [neg, neu, pos]
+    """
+    if label != "NEG":
+        return label, source
+
+    p_neg, p_neu, p_pos = probs
+
+    # --- Rule 1: NEG confidence threshold cao hơn ---
+    if p_neg < CONF_THRESHOLD_NEG:
+        return "NEU", "low_conf_neg→NEU"
+
+    # --- Rule 2: Question detection → NEU ---
+    if _is_question(normalized_text):
+        return "NEU", "question→NEU"
+
+    # --- Rule 3: Name listing → NEU ---
+    if _is_name_listing(normalized_text):
+        return "NEU", "listing→NEU"
+
+    # --- Rule 4: Domain history → nâng ngưỡng ---
+    domain_hits = _count_domain_hits(normalized_text)
+    if domain_hits >= 2 and p_neg < DOMAIN_THRESHOLD:
+        return "NEU", "domain→NEU"
+
+    # --- Rule 5: Mixed sentiment → NEU ---
+    if p_pos > 0.15 and p_neg > 0.15 and p_neg < 0.85:
+        return "NEU", "mixed→NEU"
+
+    # --- Rule 6: Short neutral → NEU ---
+    tokens = normalized_text.split()
+    if len(tokens) <= 3 and p_neg < 0.95:
+        return "NEU", "short→NEU"
+
+    return label, source
 
 
 # ---------------------------------------------------------------------------
@@ -137,15 +221,17 @@ def build_predictor():
             top_val = max(p)
             top_idx = p.index(top_val)
             label = LABEL_ORDER[top_idx]
-            sorted_p = sorted(p, reverse=True)
             margin_pos_neg = abs(p[2] - p[0])
             source = source_tag
+
+            # --- V2 confidence gating (áp dụng cho POS/NEU) ---
             if top_val < CONF_THRESHOLD:
                 label = "NEU"
                 source = "low_conf→NEU"
             elif label in {"POS", "NEG"} and margin_pos_neg < MARGIN_THRESHOLD:
                 label = "NEU"
                 source = "low_margin→NEU"
+
             results[abs_i] = (label, top_val, source, p)
         return results
 
@@ -168,7 +254,7 @@ def main():
                   for t in tqdm(df["text"].fillna(""), desc="Normalize")]
     df["normalized"] = normalized
 
-    # Lexicon shortcut trước
+    # Lexicon shortcut trước (V3: mở rộng lên 8 token)
     labels = [None] * n
     scores = [0.0] * n
     sources = [""] * n
@@ -200,6 +286,10 @@ def main():
         batch_texts = pending_texts[batch_start:batch_start + BATCH_SIZE]
         out = predict_batch(batch_texts)
         for abs_i, (lb, sc, src_tag, probs) in zip(batch_abs, out):
+            # V3: post-processing heuristics
+            lb, src_tag = postprocess_label(
+                lb, sc, probs, normalized[abs_i], src_tag
+            )
             labels[abs_i] = lb
             scores[abs_i] = sc
             sources[abs_i] = src_tag
@@ -223,7 +313,7 @@ def main():
         report[f"{col}_pct"] = (report[col] / report["total"] * 100).round(2)
     report.to_csv(DATA_DIR / "sentiment_report.csv", encoding="utf-8-sig")
 
-    print("\n=== Báo cáo sentiment (V2) ===")
+    print("\n=== Báo cáo sentiment (V3) ===")
     print(report.to_string())
     src_counts = pd.Series(sources).value_counts()
     print("\n=== Phân phối nguồn nhãn ===")
