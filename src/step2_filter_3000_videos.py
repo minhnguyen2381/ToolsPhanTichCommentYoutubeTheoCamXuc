@@ -88,7 +88,7 @@ def main():
     if not df_failed_level1.empty:
         model, util = get_sentence_model()
         if model is not None:
-            AI_THRESHOLD = 0.35 # Ngưỡng tương đồng Cosine
+            AI_THRESHOLD = 0.6 # Ngưỡng tương đồng Cosine
             print(f"[*] LEVEL 2: Dùng AI quét {len(df_failed_level1)} videos bị loại ở Level 1...")
             
             # Câu neo chuẩn

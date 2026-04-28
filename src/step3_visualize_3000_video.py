@@ -88,11 +88,19 @@ def main():
 
     # 2. Biểu đồ lượt view theo chủ đề
     plt.figure(figsize=(10, 6))
-    sns.barplot(x="topic", y="tổng_views", data=topic_stats, palette="magma", hue="topic", legend=False)
-    plt.title("Tổng lượt view theo chủ đề (đơn vị: trăm triệu)", fontsize=16)
+    ax = sns.barplot(x="topic", y="tổng_views", data=topic_stats, palette="magma", hue="topic", legend=False)
+    plt.title("Tổng lượt view theo chủ đề", fontsize=16)
     plt.xlabel("Chủ đề")
     plt.ylabel("Tổng lượt view")
     plt.xticks(rotation=45)
+    
+    # Tắt scientific notation trên trục Y
+    ax.ticklabel_format(style='plain', axis='y')
+    
+    # In số lên đỉnh cột
+    for container in ax.containers:
+        ax.bar_label(container, fmt='%.0f', padding=3)
+        
     plt.tight_layout()
     plt.savefig(REPORT_DIR / "topic_views.png", dpi=300)
     plt.close()
