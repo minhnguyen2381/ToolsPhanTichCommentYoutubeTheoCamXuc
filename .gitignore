@@ -20,3 +20,5 @@ Thumbs.db
 # Data and Reports
 data/
 report/
+
+src/cookies.txt

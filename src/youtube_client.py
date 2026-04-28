@@ -13,12 +13,46 @@ from yt_dlp.utils import DownloadError
 from youtube_comment_downloader import YoutubeCommentDownloader, SORT_BY_POPULAR
 
 
+import os
+
+def _clean_cookie_file():
+    """Tự động dọn dẹp ký tự BOM và định dạng CRLF để tránh lỗi Netscape format cho yt-dlp."""
+    cookie_path = os.path.join(os.path.dirname(__file__), "cookies.txt")
+    if not os.path.exists(cookie_path):
+        return
+    try:
+        with open(cookie_path, 'rb') as f:
+            data = f.read()
+            
+        modified = False
+        # Xóa BOM tàng hình của Windows
+        if data.startswith(b'\xef\xbb\xbf'):
+            data = data[3:]
+            modified = True
+            
+        # Chuẩn hóa xuống dòng từ Windows (CRLF) sang Linux (LF)
+        if b'\r\n' in data:
+            data = data.replace(b'\r\n', b'\n')
+            modified = True
+            
+        # Chỉ ghi đè lại nếu có dính "sạn"
+        if modified:
+            with open(cookie_path, 'wb') as f:
+                f.write(data)
+    except Exception as e:
+        print(f"[!] Warning: Lỗi khi dọn dẹp file cookie: {e}")
+
+# Tự động chạy quét dọn rác trước khi khởi tạo yt-dlp
+_clean_cookie_file()
+
 _BASE_OPTS = {
     "quiet": True,
     "no_warnings": True,
     "skip_download": True,
     "noprogress": True,
     "extractor_args": {"youtube": {"lang": ["vi", "en"]}},
+    "cookiefile": os.path.join(os.path.dirname(__file__), "cookies.txt"),  # Đọc cookie từ src/cookies.txt
+    "ignore_no_formats_error": True,  # Bỏ qua lỗi format vì mình chỉ cần lấy thông tin metadata (view, like)
 }
 
 
