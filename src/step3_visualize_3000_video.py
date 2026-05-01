@@ -25,19 +25,31 @@ REPORT_DIR.mkdir(parents=True, exist_ok=True)
 TOPIC_RULES = {
     # ── NHÓM 1: Keywords cực kỳ cụ thể (ưu tiên cao nhất) ──
 
-    # 1. Game / Esport (keywords rất specific, không thể nhầm)
+    # 1. Game / Esport
     "game_esport": [
         "game", "gameplay", "omg 3q", "omg3q", "danh tướng 3q", "dt3q",
-        "honor of king", "vgvd", "epic heroes", "heroes evolved",
+        "honor of king", "honorofkings", "vgvd", "epic heroes", "heroes evolved",
         "bangbang", "bang bang", "đỉnh phong", "ngọa long",
-        "cf mobile", "đột kích", "crossfire",
-        "gacha", "skin", "build đồ",
+        "cf mobile", "đột kích", "crossfire", "m4a1",
+        "gacha", "skin", "build đồ", "build ",
         "quần anh", "đấu trường chân lý", "wo long", "liên quân",
-        "vtc game", "zing me", "knight of valour",
+        "vtc game", "zing me", "knight of valour", "knights of valour",
         "arena of glory", "aog", "i am monkey",
+        # English game titles
+        "dynasty warriors", "watcher of realms", "smite", "hades",
+        "for honor", "empires and puzzles", "kessen",
+        "musou", "chaos mode", "chaos difficulty", "hard mode",
+        "free mode", "moon rush", "overlords",
+        "showcase", "guide", "tutorial", "how to play", "how to use",
+        "f2p", "tier", "op hero", "broken", "banner",
+        "pvp", "pvp ", "pve", "hack ", "lv10", "lv6",
+        "weapon", "unlock", "walkthrough",
+        # Chinese game keywords
+        "王者荣耀", "荣耀", "赛季", "赛",
+        "tank ", "gánh team",
     ],
 
-    # 2. Tượng / Mô hình / Phong thủy (keywords rất specific)
+    # 2. Tượng / Mô hình / Phong thủy
     "tuong_mo_hinh": [
         "tượng", "mô hình", "figure", "unboxing", "khui hộp",
         "gỗ hương", "gỗ mun", "gỗ trắc", "gỗ bách xanh", "gỗ ngọc am",
@@ -48,6 +60,9 @@ TOPIC_RULES = {
         "phong thủy", "phong thuỷ", "trấn trạch", "hóa giải",
         "bán lẻ", "đặt tượng", "trưng bày", "báo giá",
         "cao 40cm", "cao 50cm", "cao 60cm", "cao 80cm", "cao 1m",
+        "statue", "sculpture", "origami", "gundam",
+        "thác khói", "trầm hương",
+        "ngọc cẩm thạch", "jadeite", "ngọc bích",
     ],
 
     # 3. Hình xăm / Tattoo
@@ -68,6 +83,7 @@ TOPIC_RULES = {
         "cái chết", "chết", "tử", "bại tẩu", "mạch thành", "lý do chết",
         "sa cơ", "lâm nạn", "bị giết", "thua trận", "thất bại",
         "nguyên nhân", "bi kịch", "hy sinh", "tử trận",
+        "death of", "killed", "death", "tragic",
     ],
 
     # 6. Tín ngưỡng
@@ -76,6 +92,11 @@ TOPIC_RULES = {
         "quan thánh đế quân", "thánh đế", "hiển thánh", "thần", "phúc đức",
         "chùa", "lễ hội", "worship", "temple", "deity",
         "vì sao thờ", "tại sao thờ", "được thờ",
+        "god of war", "warrior saint", "martial saint",
+        "deification", "tôn kính", "cúi đầu",
+        "nghinh ông", "diễu hành", "tuần du", "múa lân", "đoàn lân",
+        "lễ xuất", "lễ vía", "quan đế",
+        "quan thánh",
     ],
 
     # 7. Vũ khí / Xích Thố
@@ -83,6 +104,8 @@ TOPIC_RULES = {
         "thanh long đao", "thanh long yển nguyệt",
         "xích thố", "ngựa xích thố", "bảo đao", "đại đao",
         "yển nguyệt đao", "long đao", "cây đao",
+        "green dragon", "crescent blade", "red hare",
+        "blue moon dragon",
     ],
 
     # 8. So sánh sức mạnh
@@ -100,16 +123,18 @@ TOPIC_RULES = {
         "kiêu", "ngạo", "trung thành", "tự phụ", "phẩm chất",
         "nhân nghĩa", "trung can", "nghĩa khí", "hào hiệp",
         "dũng mãnh", "cao ngạo", "tính tình",
+        "loyalty", "arrogant", "righteous",
     ],
 
     # 10. Lai lịch
     "lai_lịch": [
         "lai lịch", "thân thế", "tiểu sử", "nguồn gốc", "xuất thân",
-        "quê quán", "họ tên", "sơ yếu", "lai lịch",
+        "quê quán", "họ tên", "sơ yếu",
         "là ai", "gia thế", "dòng dõi",
+        "who is", "real story", "true story",
     ],
 
-    # 11. Quan hệ nhân vật (interactions giữa Quan Vũ và các tướng khác)
+    # 11. Quan hệ nhân vật
     "quan_hệ_nhân_vật": [
         "tào tháo", "lưu bị", "gia cát lượng", "khổng minh",
         "trương phi", "lữ bố", "tôn quyền", "lã mông",
@@ -117,15 +142,34 @@ TOPIC_RULES = {
         "chu du", "cam ninh", "lý túc", "lục tốn",
         "nhan lương", "văn xú", "quan hưng", "quan bình",
         "hứa chử", "trương liêu", "bàng thống",
+        # English names
+        "cao cao", "liu bei", "zhuge liang", "zhang fei",
+        "lu bu", "sun quan", "lu meng", "zhao yun",
+        "hua tuo", "ma chao", "huang zhong",
+        "yan liang", "wen chou", "hua xiong", "pang de",
+        "guan xing", "ne zha",
+        # Chinese names
+        "曹操", "刘备", "诸葛亮", "张飞", "吕布", "孙权",
     ],
 
-    # 12. Sự thật lịch sử
+    # 12. Sự thật lịch sử / Trận đánh
     "sự_thật_lịch_sử": [
         "sự thật", "thật sự", "bí ẩn", "bí mật", "giải mã",
         "có thật", "thực hư", "chính sử", "lịch sử",
         "phân tích", "sử", "diễn nghĩa", "ngũ hổ tướng",
         "kinh châu", "xích bích", "tranh hùng", "hào kiệt",
         "history", "three kingdoms",
+        # Trận đánh / Sự kiện cụ thể
+        "trận", "chém", "xuất trận", "ra trận", "đại phá",
+        "vượt ải", "qua ải", "hoa dung", "tha tào",
+        "phục ma", "trảm", "đánh bại", "xuất thế",
+        "chiến dịch", "đơn đao", "cứu viện",
+        "battle", "fight", "escape", "siege", "fan castle",
+        "guan du", "si shui", "chang ban", "wu zhang",
+        "mythology", "legend", "legendary", "hero",
+        "remarkable life", "complete",
+        # Lăng mộ
+        "lăng mộ", "mộ", "khai quật", "tomb",
     ],
 
     # 13. Kịch cải lương
@@ -141,13 +185,27 @@ TOPIC_RULES = {
         "trích đoạn", "full hd", "thuyết minh", "vietsub",
         "lồng tiếng", "trọn bộ", "full bộ", "tổng hợp phim",
         "trùm phim", "review phim", "tóm tắt phim",
+        "kiếm hiệp hay", "onfilm", "hồ uy tướng",
+        "quán sử kỳ tài", "capcapsub",
+        "the lost bladesman",
     ],
 
-    # 15. Cuộc đời Quan Vũ (chung nhất → cuối cùng)
+    # 15. Fan content / Nghệ thuật
+    "fan_content": [
+        "edit", "brodyaga", "lil quan", "preach",
+        "karaoke", "remix", "nhạc",
+        "drawing", "vẽ ", "tranh", "hình nền",
+        "diy", "custom", "parody", "music video",
+        "tướng quân", "hào khí",
+    ],
+
+    # 16. Cuộc đời Quan Vũ (chung nhất → cuối cùng)
     "cuộc_đời": [
         "cuộc đời", "hành trình", "sự nghiệp", "chiến công",
         "tóm tắt", "toàn bộ", "summary", "trọn đời",
         "đời", "truyện", "câu chuyện", "tam quốc",
+        "guan yu", "guan gong", "关羽", "关公", "关帝",
+        "quan vũ", "quan công", "quan vân trường",
     ],
 }
 
@@ -164,9 +222,10 @@ TOPIC_LABELS = {
     "tính_cách": "Phân tích tính cách",
     "lai_lịch": "Lai lịch",
     "quan_hệ_nhân_vật": "Quan hệ nhân vật",
-    "sự_thật_lịch_sử": "Sự thật lịch sử",
+    "sự_thật_lịch_sử": "Sự thật / Trận đánh",
     "kịch_cải_lương": "Kịch cải lương",
     "phim_cut": "Phim / Đoạn cut",
+    "fan_content": "Fan content / Nghệ thuật",
     "cuộc_đời": "Cuộc đời Quan Vũ",
     "khác": "Khác",
 }

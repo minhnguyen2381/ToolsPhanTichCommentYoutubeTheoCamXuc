@@ -65,12 +65,38 @@ BLACKLIST = [
     # Nội dung rác khác
     "người cuối cùng ngừng ăn", "linh quang official",
     "cặp đôi cuối cùng", "ut mini", "cam cam tv",
-    "vật lý 11", "lý thầy quán", "căn cước", "vneID",
+    "vật lý 11", "lý thầy quán", "căn cước", "vneid",
     "kinh doanh chuỗi", "công nghệ thông tin",
     "nuốt côn trùng", "làm công nhân 700 năm",
     "harvesting", "cooking with two sons", "water spinach",
     "star fruit", "mother and two children",
     "evil mother-in-law", "serama đẹp",
+    # Tham quan (du lịch / thánh địa)
+    "tham quan thánh địa", "tham quan thánh tích",
+    "tham quan thành thất", "tham quan thánh",
+    # Quan Thánh false positives (Cao Đài / hầu đồng / phố)
+    "tọa thánh", "cao đài", "thánh thất",
+    "quan hoàng", "hát văn",
+    "đặc sản", "bánh bao", "bún cá",
+    "cổng thời ngõ", "homestay", "café", "cafe",
+    # Nội dung không liên quan Tam Quốc
+    "nuôi em", "chipchip review", "avgsub", "mt viesub",
+    "shark review", "full có kết", "full end",
+    "kiểm soát", "vtv1", "lỗ hổng",
+    "nóng:", "tin nhanh",
+    "16 giờ truy bắt", "sát hại", "hung thủ",
+    "điểm quốc tế", "chiến dịch delta",
+    "tài chính", "nhung tarot", "tarot",
+    "thí sinh dẫn", "hài mới", "trần thành trường giang",
+    "kinh thánh", "mục sư", "giáng sinh", "thánh ca",
+    "chánh kiến", "giác hoàng",
+    "đạo viên", "bác sĩ xuyên", "hoàng hậu thất sủng",
+    "500.000 quân trung quốc", "3 triệu quân trung quốc",
+    "thái lan thông báo", "pháp công khai quay xe",
+    "tổng quan công việc", "quan hệ nhân dân",
+    "quan chức mỹ", "luật quân hành",
+    "đại dịch covid", "nhân quan thánh kinh",
+    "quan nhị ca", "bán đất tiền hải",
 ]
 
 # ── LỚP 2: WHITELIST ─────────────────────────────────────────────────────────
