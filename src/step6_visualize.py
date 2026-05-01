@@ -76,9 +76,9 @@ def plot_keywords(df_kw, locale: str, report_dir):
     plt.xlabel(txt["personality_xlabel"])
     plt.ylabel(txt["personality_ylabel"])
     
-    # In số lên đỉnh cột
+    # In số lên đỉnh cột (format dấu chấm phân cách hàng nghìn)
     for container in ax.containers:
-        ax.bar_label(container, fmt='%.0f', padding=3)
+        ax.bar_label(container, labels=[f"{int(v.get_width()):,}".replace(",", ".") for v in container], padding=3)
     
     out_file = report_dir / "personality_traits.png"
     plt.tight_layout()

@@ -6,6 +6,7 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import seaborn as sns
 from pathlib import Path
 import sys, io
@@ -233,6 +234,11 @@ def classify_topic(title: str) -> str:
     return "khác"
 
 
+def _fmt_dot(x, _=None):
+    """Format số với dấu chấm phân cách hàng nghìn: 9890000 → 9.890.000"""
+    return f"{int(x):,}".replace(",", ".")
+
+
 def _draw_charts(topic_stats, locale: str, report_dir):
     """Vẽ 3 biểu đồ topic cho một locale cụ thể."""
     txt = CHART_TEXT[locale]
@@ -254,7 +260,7 @@ def _draw_charts(topic_stats, locale: str, report_dir):
     plt.ylabel(txt["topic_dist_ylabel"])
     plt.xticks(rotation=45, ha="right")
     for container in ax1.containers:
-        ax1.bar_label(container, fmt='%.0f', padding=3)
+        ax1.bar_label(container, labels=[_fmt_dot(v.get_height()) for v in container], padding=3)
     plt.tight_layout()
     plt.savefig(report_dir / "topic_distribution.png", dpi=300)
     plt.close()
@@ -266,9 +272,9 @@ def _draw_charts(topic_stats, locale: str, report_dir):
     plt.xlabel(txt["topic_dist_xlabel"])
     plt.ylabel(txt["topic_views_ylabel"])
     plt.xticks(rotation=45, ha="right")
-    ax.ticklabel_format(style='plain', axis='y')
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(_fmt_dot))
     for container in ax.containers:
-        ax.bar_label(container, fmt='%.0f', padding=3)
+        ax.bar_label(container, labels=[_fmt_dot(v.get_height()) for v in container], padding=3)
     plt.tight_layout()
     plt.savefig(report_dir / "topic_views.png", dpi=300)
     plt.close()
@@ -280,9 +286,9 @@ def _draw_charts(topic_stats, locale: str, report_dir):
     plt.xlabel(txt["topic_dist_xlabel"])
     plt.ylabel(txt["topic_comments_ylabel"])
     plt.xticks(rotation=45, ha="right")
-    ax2.ticklabel_format(style='plain', axis='y')
+    ax2.yaxis.set_major_formatter(mticker.FuncFormatter(_fmt_dot))
     for container in ax2.containers:
-        ax2.bar_label(container, fmt='%.0f', padding=3)
+        ax2.bar_label(container, labels=[_fmt_dot(v.get_height()) for v in container], padding=3)
     plt.tight_layout()
     plt.savefig(report_dir / "topic_comments.png", dpi=300)
     plt.close()
