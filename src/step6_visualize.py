@@ -42,10 +42,14 @@ def plot_keywords(df_kw):
     plt.figure(figsize=(12, 6))
     sns.set_theme(style="whitegrid")
     
-    sns.barplot(x="count", y="keyword", data=df_kw, palette="coolwarm", hue="keyword", legend=False)
+    ax = sns.barplot(x="count", y="keyword", data=df_kw, palette="coolwarm", hue="keyword", legend=False)
     plt.title("Mức độ phổ biến của các tính cách mô tả Quan Vũ", fontsize=16)
     plt.xlabel("Số lần xuất hiện")
     plt.ylabel("Tính cách / Đặc điểm")
+    
+    # In số lên đỉnh cột
+    for container in ax.containers:
+        ax.bar_label(container, fmt='%.0f', padding=3)
     
     out_file = REPORT_DIR / "personality_traits.png"
     plt.tight_layout()

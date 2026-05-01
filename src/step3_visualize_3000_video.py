@@ -289,11 +289,16 @@ def main():
     
     # 1. Biểu đồ số lượng video theo chủ đề
     plt.figure(figsize=(14, 8))
-    sns.barplot(x="label", y="số_video", data=topic_stats, palette="viridis", hue="label", legend=False)
+    ax1 = sns.barplot(x="label", y="số_video", data=topic_stats, palette="viridis", hue="label", legend=False)
     plt.title("Phân bổ số lượng video theo chủ đề", fontsize=16)
     plt.xlabel("Chủ đề")
     plt.ylabel("Số lượng video")
     plt.xticks(rotation=45, ha="right")
+    
+    # In số lên đỉnh cột
+    for container in ax1.containers:
+        ax1.bar_label(container, fmt='%.0f', padding=3)
+    
     plt.tight_layout()
     plt.savefig(REPORT_DIR / "topic_distribution.png", dpi=300)
     plt.close()
