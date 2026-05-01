@@ -57,12 +57,20 @@ def get_sentence_model():
         return None, None
 
 def main():
-    in_file = DATA_DIR / "v5_3000_videos_raw.csv"
-    out_file = DATA_DIR / "v5_3000_videos_filtered.csv"
+    # Ưu tiên file đã lọc rác, fallback về raw
+    cleaned_file = DATA_DIR / "v5_3000_videos_cleaned.csv"
+    raw_file = DATA_DIR / "v5_3000_videos_raw.csv"
     
-    if not in_file.exists():
-        print(f"[!] Không tìm thấy file {in_file}")
+    if cleaned_file.exists():
+        in_file = cleaned_file
+    elif raw_file.exists():
+        in_file = raw_file
+        print("[!] Chưa chạy step1b_clean_raw_data.py → dùng file raw.")
+    else:
+        print(f"[!] Không tìm thấy file dữ liệu video.")
         return
+    
+    out_file = DATA_DIR / "v5_3000_videos_filtered.csv"
 
     df = pd.read_csv(in_file)
     initial_count = len(df)
