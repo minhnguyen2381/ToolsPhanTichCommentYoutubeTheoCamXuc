@@ -33,7 +33,7 @@ BLACKLIST = [
     # Giải trí / YouTuber không liên quan
     "khánh linh", "quang con", "tiktok", "thử thách",
     "man utd", "arsenal", "champions league", "bóng đá", "leo rank",
-    "flowborn", "roblox",
+    "flowborn", "roblox", "premier league",
     # Nhân vật / phim bị nhầm
     "diêu quán vũ", "hạng vũ", "bao công", "triển chiêu", "bao thanh thiên",
     "quán vũ",  # diễn viên Diêu Quán Vũ
@@ -42,6 +42,35 @@ BLACKLIST = [
     "haki vũ trang", "haki quan sát",
     "nhà quan sát",  # kênh tin tức
     "vns defense", "thế trận ngầm", "bàn cờ thế sự",
+    # ── FALSE POSITIVES: "quan" / "công" / "thánh" dùng sai ngữ cảnh ──
+    # Công an / Sĩ quan / Công binh
+    "công an", "sĩ quan công binh", "trường sĩ quan", "cấp bậc hàm",
+    "bộ công an", "flycam recap", "tuyển sinh trường sĩ quan",
+    # Tham quan (du lịch)
+    "tham quan công trình", "tham quan công viên", "trải nghiệm công việc",
+    "thăm quan công trường", "công trình minecraft",
+    # Di quan / Thánh lễ (tang lễ Công giáo)
+    "di quan - thánh lễ", "di quan", "thánh lễ an táng", "tang lễ cụ",
+    "giáo xứ", "giáo hạt", "giáo hội", "đan viện",
+    "truyền chức linh mục", "thánh lễ chúa nhật",
+    # Quan Hoàng (hầu đồng) / Quán Thánh (phố)
+    "quan hoàng mười", "quan hoàng bảy", "hoài thanh dâng văn",
+    "hát văn quan hoàng", "dâng văn quan hoàng",
+    "phố quán thánh", "đường quán thánh", "bánh xèo quán thánh",
+    "bún cá quán thánh", "bia bao cấp quán thánh",
+    "cổng thời ngõ 146 quán thánh",
+    # "Liên quan" dùng theo nghĩa thời sự
+    "liên quan đến dự án", "liên quan đến vụ",
+    "không khởi tố", "thông tin quan trọng liên quan",
+    # Nội dung rác khác
+    "người cuối cùng ngừng ăn", "linh quang official",
+    "cặp đôi cuối cùng", "ut mini", "cam cam tv",
+    "vật lý 11", "lý thầy quán", "căn cước", "vneID",
+    "kinh doanh chuỗi", "công nghệ thông tin",
+    "nuốt côn trùng", "làm công nhân 700 năm",
+    "harvesting", "cooking with two sons", "water spinach",
+    "star fruit", "mother and two children",
+    "evil mother-in-law", "serama đẹp",
 ]
 
 # ── LỚP 2: WHITELIST ─────────────────────────────────────────────────────────
