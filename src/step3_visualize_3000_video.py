@@ -65,12 +65,27 @@ TOPIC_RULES = {
         "ngọc cẩm thạch", "jadeite", "ngọc bích",
     ],
 
-    # 3. Hình xăm / Tattoo
+    # 3. Nghệ thuật biểu diễn (cải lương, tuồng, kịch, xiếc, múa…)
+    "nghệ_thuật_biểu_diễn": [
+        # Cải lương / Tuồng / Hát bội
+        "cải lương", "tuồng", "hát bội", "vọng cổ", "tân cổ giao duyên",
+        # Kịch / Sân khấu
+        "kịch", "sân khấu", "nghệ sĩ", "diễn viên",
+        "tiết mục", "biểu diễn", "trình diễn", "giao lưu",
+        # Kinh kịch / Nghệ thuật Trung Quốc
+        "京剧", "opera", "kinh kịch", "peking opera",
+        "đoàn nghệ thuật", "nghệ thuật trung quốc",
+        # Xiếc / Múa / Biểu diễn khác
+        "xiếc", "kungfu", "múa", "điện ảnh",
+        "tiếng trung",
+    ],
+
+    # 4. Hình xăm / Tattoo
     "hinh_xam": [
         "xăm", "tattoo", "hình xăm",
     ],
 
-    # 4. Xuyên không / Tiểu thuyết audio
+    # 5. Xuyên không / Tiểu thuyết audio
     "xuyen_khong_tieu_thuyet": [
         "xuyên không", "chapter", "tuyệt lộ",
         "xuyên thành con trai",
@@ -172,12 +187,7 @@ TOPIC_RULES = {
         "lăng mộ", "mộ", "khai quật", "tomb",
     ],
 
-    # 13. Kịch cải lương
-    "kịch_cải_lương": [
-        "cải lương", "tuồng", "hát bội", "kịch", "tiếng trung",
-        "京剧", "opera", "sân khấu", "nghệ sĩ", "diễn viên",
-        "vọng cổ", "tân cổ giao duyên",
-    ],
+
 
     # 14. Phim / Đoạn cut
     "phim_cut": [
@@ -213,6 +223,7 @@ TOPIC_RULES = {
 TOPIC_LABELS = {
     "game_esport": "Game / Esport",
     "tuong_mo_hinh": "Tượng / Mô hình",
+    "nghệ_thuật_biểu_diễn": "Nghệ thuật biểu diễn",
     "hinh_xam": "Hình xăm / Tattoo",
     "xuyen_khong_tieu_thuyet": "Xuyên không / Tiểu thuyết",
     "nguyên_nhân_chết": "Nguyên nhân chết",
@@ -223,7 +234,6 @@ TOPIC_LABELS = {
     "lai_lịch": "Lai lịch",
     "quan_hệ_nhân_vật": "Quan hệ nhân vật",
     "sự_thật_lịch_sử": "Sự thật / Trận đánh",
-    "kịch_cải_lương": "Kịch cải lương",
     "phim_cut": "Phim / Đoạn cut",
     "fan_content": "Fan content / Nghệ thuật",
     "cuộc_đời": "Cuộc đời Quan Vũ",
