@@ -1,7 +1,7 @@
 """BƯỚC 3 (V5): Phân loại và trực quan hóa 3000 videos.
 - Phân loại video dựa vào title (15 chủ đề)
 - Vẽ biểu đồ phân bổ chủ đề (số lượng video, lượt view, lượt comment)
-- Lưu vào report/v5/
+- Lưu vào report/v5/<locale>/ (vi, en, zh)
 """
 
 import pandas as pd
@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 import sys, io
+from i18n_charts import (
+    SUPPORTED_LOCALES, TOPIC_LABELS as I18N_TOPIC_LABELS,
+    CHART_TEXT, apply_locale_font,
+)
 
 # Fix encoding trên Windows console
 if sys.stdout.encoding != 'utf-8':
@@ -212,25 +216,7 @@ TOPIC_RULES = {
     ],
 }
 
-# Nhãn hiển thị tiếng Việt cho biểu đồ
-TOPIC_LABELS = {
-    "game_esport": "Game / Esport",
-    "tuong_mo_hinh": "Tượng / Mô hình",
-    "nghệ_thuật_biểu_diễn": "Nghệ thuật biểu diễn",
-    "hinh_xam": "Hình xăm / Tattoo",
-    "xuyen_khong_tieu_thuyet": "Xuyên không / Tiểu thuyết",
-    "nguyên_nhân_chết": "Nguyên nhân chết",
-    "tín_ngưỡng": "Tín ngưỡng",
-    "vũ_khí_xích_thố": "Vũ khí / Xích Thố",
-    "so_sánh_sức_mạnh": "So sánh sức mạnh",
-    "tính_cách": "Phân tích tính cách",
-    "lai_lịch": "Lai lịch",
-    "quan_hệ_nhân_vật": "Quan hệ nhân vật",
-    "sự_thật_lịch_sử": "Sự thật / Trận đánh",
-    "phim_cut": "Phim / Đoạn cut",
-    "cuộc_đời": "Cuộc đời Quan Vũ",
-    "khác": "Khác",
-}
+# Nhãn hiển thị được lấy từ i18n_charts theo locale
 
 
 def classify_topic(title: str) -> str:
@@ -245,6 +231,61 @@ def classify_topic(title: str) -> str:
             if kw in t:
                 return topic
     return "khác"
+
+
+def _draw_charts(topic_stats, locale: str, report_dir):
+    """Vẽ 3 biểu đồ topic cho một locale cụ thể."""
+    txt = CHART_TEXT[locale]
+    labels = I18N_TOPIC_LABELS[locale]
+
+    # Áp dụng font phù hợp locale (set_theme trước, font sau)
+    sns.set_theme(style="whitegrid")
+    apply_locale_font(locale)
+
+    # Gán nhãn theo locale
+    stats = topic_stats.copy()
+    stats["label"] = stats["topic"].map(labels).fillna(stats["topic"])
+
+    # 1. Biểu đồ số lượng video theo chủ đề
+    plt.figure(figsize=(14, 8))
+    ax1 = sns.barplot(x="label", y="số_video", data=stats, palette="viridis", hue="label", legend=False)
+    plt.title(txt["topic_dist_title"], fontsize=16)
+    plt.xlabel(txt["topic_dist_xlabel"])
+    plt.ylabel(txt["topic_dist_ylabel"])
+    plt.xticks(rotation=45, ha="right")
+    for container in ax1.containers:
+        ax1.bar_label(container, fmt='%.0f', padding=3)
+    plt.tight_layout()
+    plt.savefig(report_dir / "topic_distribution.png", dpi=300)
+    plt.close()
+
+    # 2. Biểu đồ lượt view theo chủ đề
+    plt.figure(figsize=(14, 8))
+    ax = sns.barplot(x="label", y="tổng_views", data=stats, palette="magma", hue="label", legend=False)
+    plt.title(txt["topic_views_title"], fontsize=16)
+    plt.xlabel(txt["topic_dist_xlabel"])
+    plt.ylabel(txt["topic_views_ylabel"])
+    plt.xticks(rotation=45, ha="right")
+    ax.ticklabel_format(style='plain', axis='y')
+    for container in ax.containers:
+        ax.bar_label(container, fmt='%.0f', padding=3)
+    plt.tight_layout()
+    plt.savefig(report_dir / "topic_views.png", dpi=300)
+    plt.close()
+
+    # 3. Biểu đồ lượt comment theo chủ đề
+    plt.figure(figsize=(14, 8))
+    ax2 = sns.barplot(x="label", y="tổng_comments", data=stats, palette="coolwarm", hue="label", legend=False)
+    plt.title(txt["topic_comments_title"], fontsize=16)
+    plt.xlabel(txt["topic_dist_xlabel"])
+    plt.ylabel(txt["topic_comments_ylabel"])
+    plt.xticks(rotation=45, ha="right")
+    ax2.ticklabel_format(style='plain', axis='y')
+    for container in ax2.containers:
+        ax2.bar_label(container, fmt='%.0f', padding=3)
+    plt.tight_layout()
+    plt.savefig(report_dir / "topic_comments.png", dpi=300)
+    plt.close()
 
 
 def main():
@@ -278,65 +319,21 @@ def main():
         topic_stats[mask_khac],
     ], ignore_index=True)
 
-    # Thêm nhãn tiếng Việt
-    topic_stats["label"] = topic_stats["topic"].map(TOPIC_LABELS).fillna(topic_stats["topic"])
-
+    # In thống kê (dùng nhãn tiếng Việt)
+    topic_stats_vi = topic_stats.copy()
+    topic_stats_vi["label"] = topic_stats_vi["topic"].map(I18N_TOPIC_LABELS["vi"]).fillna(topic_stats_vi["topic"])
     print("\n=== THỐNG KÊ CHỦ ĐỀ ===")
-    print(topic_stats[["label", "số_video", "tổng_views", "tổng_comments", "tổng_likes"]].to_string())
+    print(topic_stats_vi[["label", "số_video", "tổng_views", "tổng_comments", "tổng_likes"]].to_string())
 
-    # Vẽ biểu đồ
-    sns.set_theme(style="whitegrid")
-    
-    # 1. Biểu đồ số lượng video theo chủ đề
-    plt.figure(figsize=(14, 8))
-    ax1 = sns.barplot(x="label", y="số_video", data=topic_stats, palette="viridis", hue="label", legend=False)
-    plt.title("Phân bổ số lượng video theo chủ đề", fontsize=16)
-    plt.xlabel("Chủ đề")
-    plt.ylabel("Số lượng video")
-    plt.xticks(rotation=45, ha="right")
-    
-    # In số lên đỉnh cột
-    for container in ax1.containers:
-        ax1.bar_label(container, fmt='%.0f', padding=3)
-    
-    plt.tight_layout()
-    plt.savefig(REPORT_DIR / "topic_distribution.png", dpi=300)
-    plt.close()
+    # Vẽ biểu đồ cho từng locale
+    for locale in SUPPORTED_LOCALES:
+        locale_dir = REPORT_DIR / locale
+        locale_dir.mkdir(parents=True, exist_ok=True)
+        print(f"\n[*] Đang vẽ biểu đồ [{locale}]...")
+        _draw_charts(topic_stats, locale, locale_dir)
+        print(f"  → Đã xuất 3 biểu đồ vào {locale_dir}")
 
-    # 2. Biểu đồ lượt view theo chủ đề
-    plt.figure(figsize=(14, 8))
-    ax = sns.barplot(x="label", y="tổng_views", data=topic_stats, palette="magma", hue="label", legend=False)
-    plt.title("Tổng lượt view theo chủ đề", fontsize=16)
-    plt.xlabel("Chủ đề")
-    plt.ylabel("Tổng lượt view")
-    plt.xticks(rotation=45, ha="right")
-    
-    # Tắt scientific notation trên trục Y
-    ax.ticklabel_format(style='plain', axis='y')
-    
-    # In số lên đỉnh cột
-    for container in ax.containers:
-        ax.bar_label(container, fmt='%.0f', padding=3)
-        
-    plt.tight_layout()
-    plt.savefig(REPORT_DIR / "topic_views.png", dpi=300)
-    plt.close()
-
-    # 3. Biểu đồ lượt comment theo chủ đề
-    plt.figure(figsize=(14, 8))
-    ax2 = sns.barplot(x="label", y="tổng_comments", data=topic_stats, palette="coolwarm", hue="label", legend=False)
-    plt.title("Tổng lượt comment theo chủ đề", fontsize=16)
-    plt.xlabel("Chủ đề")
-    plt.ylabel("Tổng lượt comment")
-    plt.xticks(rotation=45, ha="right")
-    ax2.ticklabel_format(style='plain', axis='y')
-    for container in ax2.containers:
-        ax2.bar_label(container, fmt='%.0f', padding=3)
-    plt.tight_layout()
-    plt.savefig(REPORT_DIR / "topic_comments.png", dpi=300)
-    plt.close()
-
-    print(f"[OK] Đã xuất biểu đồ ra thư mục {REPORT_DIR}")
+    print(f"\n[OK] Đã xuất biểu đồ đa ngôn ngữ ra {REPORT_DIR}")
 
 if __name__ == "__main__":
     main()
