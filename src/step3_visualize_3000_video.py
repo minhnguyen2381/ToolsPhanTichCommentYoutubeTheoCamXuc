@@ -110,7 +110,7 @@ TOPIC_RULES = {
         "god of war", "warrior saint", "martial saint",
         "deification", "tôn kính", "cúi đầu",
         "nghinh ông", "diễu hành", "tuần du", "múa lân", "đoàn lân",
-        "lễ xuất", "lễ vía", "quan đế",
+        "lễ xuất", "lễ vía", "quan đế", "quan nhị ca",
         "quan thánh",
     ],
 
@@ -200,22 +200,15 @@ TOPIC_RULES = {
         "the lost bladesman",
     ],
 
-    # 15. Fan content / Nghệ thuật
-    "fan_content": [
-        "edit", "brodyaga", "lil quan", "preach",
-        "karaoke", "remix", "nhạc",
-        "drawing", "vẽ ", "tranh", "hình nền",
-        "diy", "custom", "parody", "music video",
-        "tướng quân", "hào khí",
-    ],
 
-    # 16. Cuộc đời Quan Vũ (chung nhất → cuối cùng)
+    # 15. Cuộc đời Quan Vũ (chung nhất → cuối cùng)
     "cuộc_đời": [
         "cuộc đời", "hành trình", "sự nghiệp", "chiến công",
         "tóm tắt", "toàn bộ", "summary", "trọn đời",
-        "đời", "truyện", "câu chuyện", "tam quốc",
+        "truyện", "câu chuyện", "tam quốc",
         "guan yu", "guan gong", "关羽", "关公", "关帝",
-        "quan vũ", "quan công", "quan vân trường",
+        # Catch-all tiếng Việt
+        "quan công", "quan vân trường",
     ],
 }
 
@@ -235,7 +228,6 @@ TOPIC_LABELS = {
     "quan_hệ_nhân_vật": "Quan hệ nhân vật",
     "sự_thật_lịch_sử": "Sự thật / Trận đánh",
     "phim_cut": "Phim / Đoạn cut",
-    "fan_content": "Fan content / Nghệ thuật",
     "cuộc_đời": "Cuộc đời Quan Vũ",
     "khác": "Khác",
 }
@@ -278,6 +270,13 @@ def main():
         tổng_comments=("comments", "sum"),
         tổng_likes=("likes", "sum"),
     ).sort_values("số_video", ascending=False).reset_index()
+
+    # Đẩy "khác" xuống cuối cùng
+    mask_khac = topic_stats["topic"] == "khác"
+    topic_stats = pd.concat([
+        topic_stats[~mask_khac],
+        topic_stats[mask_khac],
+    ], ignore_index=True)
 
     # Thêm nhãn tiếng Việt
     topic_stats["label"] = topic_stats["topic"].map(TOPIC_LABELS).fillna(topic_stats["topic"])

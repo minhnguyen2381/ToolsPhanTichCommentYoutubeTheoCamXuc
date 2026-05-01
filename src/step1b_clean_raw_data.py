@@ -96,7 +96,11 @@ BLACKLIST = [
     "tổng quan công việc", "quan hệ nhân dân",
     "quan chức mỹ", "luật quân hành",
     "đại dịch covid", "nhân quan thánh kinh",
-    "quan nhị ca", "bán đất tiền hải",
+    "bán đất tiền hải",
+    # F1 driver Zhou Guanyu (bị nhầm với Quan Vũ)
+    "zhou guanyu", "zhou guan yu", "guanyu zhou",
+    # Ca sĩ / nhạc Việt không liên quan
+    "bùi công việt", "chắc do còn thương",
 ]
 
 # ── LỚP 2: WHITELIST ─────────────────────────────────────────────────────────
