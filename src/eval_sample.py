@@ -1,16 +1,15 @@
 """Random sample 200 comment để gán nhãn tay → đo accuracy/F1 của V2.
 
 Cách dùng:
-  1. python src/eval_sample.py            # tạo data/eval_sample.csv (cột `gold` rỗng)
+  1. python src/eval_sample.py            # tạo output/data/eval_sample.csv (cột `gold` rỗng)
   2. Mở CSV, điền cột `gold` với POS/NEU/NEG cho từng dòng.
   3. python src/eval_sample.py --score    # đọc lại file đã gán → in accuracy + confusion matrix.
 """
 import argparse
-from pathlib import Path
 
 import pandas as pd
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+from paths import DATA_DIR, ensure_data_dir
 SAMPLE_PATH = DATA_DIR / "eval_sample.csv"
 SAMPLE_SIZE = 200
 SEED = 42
@@ -18,6 +17,7 @@ LABELS = ["POS", "NEU", "NEG"]
 
 
 def make_sample():
+    ensure_data_dir()
     src = DATA_DIR / "comments_labeled.csv"
     if not src.exists():
         raise SystemExit(f"Không tìm thấy {src}. Chạy step3 trước.")

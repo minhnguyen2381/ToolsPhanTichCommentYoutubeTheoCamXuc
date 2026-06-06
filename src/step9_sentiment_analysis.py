@@ -3,17 +3,15 @@
 - Trích xuất keyword phổ biến (tính cách Quan Vũ).
 """
 
-import pandas as pd
-from pathlib import Path
-from tqdm import tqdm
 import torch
 import torch.nn.functional as F
+import pandas as pd
+from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
+from lexicon import LEXICON_NEG, LEXICON_POS, HISTORY_DOMAIN_KEYWORDS, QUESTION_PATTERNS
 from normalize import normalize, tokenize_for_phobert
-from lexicon import LEXICON_POS, LEXICON_NEG, HISTORY_DOMAIN_KEYWORDS, QUESTION_PATTERNS
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+from paths import DATA_DIR, ensure_data_dir
 MODEL_NAME = "wonrax/phobert-base-vietnamese-sentiment"
 
 def load_model():
@@ -166,6 +164,7 @@ def extract_keywords(df):
     return df_kw
 
 def main():
+    ensure_data_dir()
     in_file = DATA_DIR / "v5_comments_raw.csv"
     if not in_file.exists():
         print(f"[!] Không tìm thấy file {in_file}")

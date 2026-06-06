@@ -4,19 +4,18 @@ Chiến lược 3 lớp:
   2. Whitelist: Giữ lại nếu title chứa ít nhất 1 từ khóa Tam Quốc / Quan Vũ
   3. Fallback: Không match cả 2 → giữ lại để step3 xử lý bằng AI Embeddings
 
-Input:  data/v5_3000_videos_raw.csv
-Output: data/v5_3000_videos_cleaned.csv
+Input:  output/data/v5_3000_videos_raw.csv
+Output: output/data/v5_3000_videos_cleaned.csv
 """
 
 import pandas as pd
-from pathlib import Path
 import sys, io
+
+from paths import DATA_DIR, ensure_data_dir
 
 # Fix encoding trên Windows console
 if sys.stdout.encoding != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 # ── LỚP 1: BLACKLIST ─────────────────────────────────────────────────────────
 # Nếu title chứa BẤT KỲ cụm nào → loại ngay
@@ -149,6 +148,7 @@ def check_whitelist(title_lower: str) -> bool:
 
 
 def main():
+    ensure_data_dir()
     in_file = DATA_DIR / "v5_3000_videos_raw.csv"
     out_file = DATA_DIR / "v5_3000_videos_cleaned.csv"
 

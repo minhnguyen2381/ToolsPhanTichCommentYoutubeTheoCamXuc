@@ -1,24 +1,21 @@
 """BƯỚC 5 (V6): Thống kê kênh YouTube đăng ≥2 video liên quan Quan Vũ.
 
-Input:  data/v5_3000_videos_filtered.csv (fallback cleaned / raw)
-Output: data/v6_channel_stats.csv
+Input:  output/data/v5_3000_videos_filtered.csv (fallback cleaned / raw)
+Output: output/data/v6_channel_stats.csv
 """
 
+import io
 import re
 import sys
-import io
-from pathlib import Path
 
 import pandas as pd
 from tqdm import tqdm
 
+from paths import DATA_DIR, ensure_data_dir
 from youtube_client import get_channel_info, get_video_channel_metadata
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-DATA_DIR.mkdir(exist_ok=True)
 
 V6_KEYWORDS = [
     "quan công",
@@ -94,6 +91,7 @@ def _channel_group_key(row):
 
 
 def main():
+    ensure_data_dir()
     in_file = _resolve_input_file()
     if in_file is None:
         print("[!] Không tìm thấy file video. Chạy step1→step3 trước.")

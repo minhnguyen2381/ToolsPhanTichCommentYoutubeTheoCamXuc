@@ -3,29 +3,26 @@
 Google scrape trực tiếp thường bị chặn; pipeline dùng ddgs thay thế.
 
 Output:
-  data/v6_google_results_raw.csv
-  data/v6_google_content_types.csv
-  data/v6_google_year_trend.csv
-  data/v6_google_top_keywords.csv
+  output/data/v6_google_results_raw.csv
+  output/data/v6_google_content_types.csv
+  output/data/v6_google_year_trend.csv
+  output/data/v6_google_top_keywords.csv
 """
 
+import io
 import re
 import sys
-import io
 from collections import Counter
-from pathlib import Path
 from urllib.parse import urlparse
 
 import pandas as pd
 from tqdm import tqdm
 
 from google_client import iter_google_search
+from paths import DATA_DIR, ensure_data_dir
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-DATA_DIR.mkdir(exist_ok=True)
 
 KEYWORDS = [
     "Quan Công",
@@ -199,6 +196,7 @@ def build_top_keywords(df_raw):
 
 
 def main():
+    ensure_data_dir()
     df_raw, per_keyword = crawl_google()
 
     print("\n=== TÓM TẮT KẾT QUẢ THEO KEYWORD ===")
@@ -223,7 +221,7 @@ def main():
     top_df = build_top_keywords(df_raw)
     print("\n=== TOP 15 KEYWORD LIÊN QUAN ===")
     print(top_df.to_string(index=False))
-    print("\n[OK] Hoàn tất step6 — xem data/v6_google_*.csv")
+    print("\n[OK] Hoàn tất step6 — xem output/data/v6_google_*.csv")
 
 
 if __name__ == "__main__":

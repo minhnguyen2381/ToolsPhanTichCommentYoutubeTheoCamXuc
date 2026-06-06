@@ -5,14 +5,14 @@ Lọc các video từ v5_3000_videos_raw.csv:
 - Chỉ loại bỏ các video thực sự không liên quan.
 """
 
-import pandas as pd
-from pathlib import Path
 import warnings
+
+import pandas as pd
+
+from paths import DATA_DIR, ensure_data_dir
 
 # Tắt các warning của thư viện
 warnings.filterwarnings('ignore')
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 # Trọng số từ khóa
 MAIN_KEYS = [
@@ -57,6 +57,7 @@ def get_sentence_model():
         return None, None
 
 def main():
+    ensure_data_dir()
     # Ưu tiên file đã lọc rác, fallback về raw
     cleaned_file = DATA_DIR / "v5_3000_videos_cleaned.csv"
     raw_file = DATA_DIR / "v5_3000_videos_raw.csv"

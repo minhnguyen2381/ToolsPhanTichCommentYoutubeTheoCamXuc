@@ -1,28 +1,25 @@
 """BƯỚC 4: Phân loại và trực quan hóa 3000 videos.
 - Phân loại video dựa vào title (15 chủ đề)
 - Vẽ biểu đồ phân bổ chủ đề (số lượng video, lượt view, lượt comment)
-- Lưu vào report/<locale>/ (vi, en, zh)
+- Lưu vào output/report/<locale>/ (vi, en, zh)
 """
 
-import pandas as pd
+import sys, io
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+import pandas as pd
 import seaborn as sns
-from pathlib import Path
-import sys, io
+
 from i18n_charts import (
     SUPPORTED_LOCALES, TOPIC_LABELS as I18N_TOPIC_LABELS,
     CHART_TEXT, apply_locale_font, fmt_dot,
 )
+from paths import DATA_DIR, REPORT_DIR, ensure_data_dir, ensure_report_dir
 
 # Fix encoding trên Windows console
 if sys.stdout.encoding != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-REPORT_DIR = Path(__file__).resolve().parent.parent / "report"
-
-REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── 15 CHỦ ĐỀ PHÂN LOẠI ─────────────────────────────────────────────────────
 # Thứ tự trong dict = thứ tự ưu tiên khi phân loại.
@@ -290,6 +287,8 @@ def _draw_charts(topic_stats, locale: str, report_dir):
 
 
 def main():
+    ensure_data_dir()
+    ensure_report_dir()
     in_file = DATA_DIR / "v5_3000_videos_filtered.csv"
     if not in_file.exists():
         # Fallback: dùng file cleaned nếu không có filtered
@@ -334,7 +333,7 @@ def main():
         _draw_charts(topic_stats, locale, locale_dir)
         print(f"  → Đã xuất 3 biểu đồ vào {locale_dir}")
 
-    print(f"\n[OK] Đã xuất biểu đồ đa ngôn ngữ ra {REPORT_DIR}")
+    print(f"\n[OK] Đã xuất biểu đồ đa ngôn ngữ ra output/report/{{vi,en,zh}}/")
 
 if __name__ == "__main__":
     main()

@@ -1,26 +1,24 @@
 """BƯỚC 10: Trực quan hóa kết quả phân tích comment.
 - Vẽ biểu đồ Sentiment tổng thể.
 - Vẽ biểu đồ tỷ lệ tính cách đặc trưng của Quan Vũ.
-- Xuất đa ngôn ngữ: vi, en, zh → report/<locale>/
+- Xuất đa ngôn ngữ: vi, en, zh → output/report/<locale>/
 """
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from pathlib import Path
 import sys, io
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
 from i18n_charts import (
     SUPPORTED_LOCALES, SENTIMENT_LABELS, KEYWORD_LABELS,
     CHART_TEXT, apply_locale_font, fmt_dot,
 )
+from paths import DATA_DIR, REPORT_DIR, ensure_report_dir
 
 # Fix encoding trên Windows console
 if sys.stdout.encoding != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-REPORT_DIR = Path(__file__).resolve().parent.parent / "report"
-REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 def plot_sentiment(df_labeled, locale: str, report_dir):
     """Vẽ biểu đồ Sentiment cho một locale cụ thể."""
@@ -87,6 +85,7 @@ def plot_keywords(df_kw, locale: str, report_dir):
     print(f"    → Đã lưu {out_file}")
 
 def main():
+    ensure_report_dir()
     labeled_file = DATA_DIR / "v5_comments_labeled.csv"
     kw_file = DATA_DIR / "v5_extracted_keywords.csv"
     
@@ -122,7 +121,7 @@ def main():
         
         print(f"  → Hoàn tất [{locale}]")
     
-    print(f"\n[OK] Đã xuất biểu đồ đa ngôn ngữ ra {REPORT_DIR}")
+    print(f"\n[OK] Đã xuất biểu đồ đa ngôn ngữ ra output/report/{{vi,en,zh}}/")
 
 if __name__ == "__main__":
     main()

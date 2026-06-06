@@ -1,20 +1,20 @@
 """BƯỚC 8: Cào comment từ playlist.
 Lấy danh sách video từ playlist mục tiêu.
-Cào comment cho mỗi video và lưu lại thành data/v5_comments_raw.csv.
+Cào comment cho mỗi video và lưu lại thành output/data/v5_comments_raw.csv.
 """
 
 import os
 import time
-from pathlib import Path
+
 import pandas as pd
 from dotenv import load_dotenv
 
+from paths import DATA_DIR, ensure_data_dir
 from youtube_client import list_playlist_videos, iter_comments
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-DATA_DIR.mkdir(exist_ok=True)
 
 def main():
+    ensure_data_dir()
     load_dotenv()
     # Playlist ID mặc định như CLAUDE.md nếu không có trong .env
     playlist_id = os.getenv("PLAYLIST_ID", "PLlvlc45o3QQcwtas1taX7VlLyZ6Advf_3")

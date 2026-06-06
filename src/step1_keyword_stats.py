@@ -9,11 +9,11 @@ Cải tiến V5:
 import sys
 import time
 import concurrent.futures
-from pathlib import Path
 
 import pandas as pd
 from tqdm import tqdm
 
+from paths import DATA_DIR, ensure_data_dir
 from youtube_client import search_videos, get_video_stats
 
 KEYWORDS = [
@@ -26,9 +26,6 @@ KEYWORDS = [
 ]
 
 MAX_RESULTS = 500
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-DATA_DIR.mkdir(exist_ok=True)
 
 # (Đã di chuyển phân loại chủ đề sang step 3)
 
@@ -60,6 +57,7 @@ def get_video_stats_with_progress(video_ids, keyword_label=""):
 
 
 def main():
+    ensure_data_dir()
     all_videos = {}  # videoId -> dict (dedup)
     keyword_summary = []
 
