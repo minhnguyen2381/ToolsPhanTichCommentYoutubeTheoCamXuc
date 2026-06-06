@@ -28,7 +28,7 @@ def main():
         if ret != 0:
             print(f"[FAIL] {script} trả về mã {ret}. Dừng pipeline.")
             sys.exit(ret)
-    print("\n[DONE] Pipeline hoàn tất. Xem output/data/, output/report/{vi,en,zh}/ và file output_*.zip.")
+    print("\n[DONE] Pipeline hoàn tất. Xem output/data/, output/report/{vi,en,zh}/ và zip_exporter/.")
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = ROOT / "output"
 DATA_DIR = OUTPUT_DIR / "data"
 REPORT_DIR = OUTPUT_DIR / "report"
+ZIP_EXPORTER_DIR = ROOT / "zip_exporter"
 
 
 def ensure_data_dir() -> None:
@@ -19,8 +20,12 @@ def ensure_report_dir() -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def ensure_zip_exporter_dir() -> None:
+    ZIP_EXPORTER_DIR.mkdir(parents=True, exist_ok=True)
+
+
 def zip_output() -> Path:
-    """Nén output/data + output/report thành output_YYYYMMDD_HHMMSS.zip tại repo root."""
+    """Nén output/data + output/report thành zip_exporter/output_YYYYMMDD_HHMMSS.zip."""
     if not OUTPUT_DIR.exists():
         raise FileNotFoundError(f"Không tìm thấy thư mục {OUTPUT_DIR}. Chạy pipeline trước.")
 
@@ -28,8 +33,9 @@ def zip_output() -> Path:
     if not files:
         raise FileNotFoundError(f"Thư mục {OUTPUT_DIR} trống, không có gì để nén.")
 
+    ensure_zip_exporter_dir()
     zip_name = f"output_{datetime.now():%Y%m%d_%H%M%S}.zip"
-    zip_path = ROOT / zip_name
+    zip_path = ZIP_EXPORTER_DIR / zip_name
 
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for file_path in files:

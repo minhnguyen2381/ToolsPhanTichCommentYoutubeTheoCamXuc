@@ -19,6 +19,6 @@ Thumbs.db
 
 # Pipeline output
 output/
-output_*.zip
+zip_exporter/
 
 src/cookies.txt
