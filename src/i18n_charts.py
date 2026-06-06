@@ -315,6 +315,111 @@ SUMMARY_TEXT = {
     },
 }
 
+# ── SUMMARY NARRATIVE (Markdown) ──────────────────────────────────────────────
+NARRATIVE_TEXT = {
+    "vi": {
+        "intro": (
+            "Báo cáo này tổng hợp kết quả khảo sát nội dung liên quan đến "
+            "Quan Công, Quan Vũ, Quan Thánh, Quan Thánh Đế Quân và Quan Vân Trường "
+            "trên YouTube và kết quả tìm kiếm web."
+        ),
+        "table_detail": "Bảng chi tiết",
+        "channels_para": (
+            "Trong tổng số **{total_channels}** kênh có từ 2 video trở lên, "
+            "kênh **{top_channel}** dẫn đầu với **{top_videos}** video "
+            "({top_pct}%). Về loại tài khoản, {account_breakdown}."
+        ),
+        "channels_top3": "Ba kênh hàng đầu gồm: {top3_list}.",
+        "account_item": "{label} chiếm **{pct}%** ({videos} video)",
+        "account_join": " và ",
+        "top3_item": "**{name}** ({videos} video, {pct}%)",
+        "top3_join": ", ",
+        "content_para": (
+            "Trong tổng số **{total}** kết quả được phân loại, "
+            "{top_types} chiếm tỷ lệ cao nhất."
+        ),
+        "content_type_item": "**{type}** ({pct}%)",
+        "content_type_join": ", ",
+        "year_para": (
+            "Năm **{peak_year}** ghi nhận số lần xuất hiện cao nhất "
+            "với **{peak_count}** lần. Xu hướng gần đây: {trend_label}."
+        ),
+        "trend_up": "tăng dần",
+        "trend_down": "giảm dần",
+        "trend_stable": "tương đối ổn định",
+        "keywords_para": "Các keyword liên quan nổi bật nhất gồm: {keyword_list}.",
+        "keyword_item": "**{keyword}** ({rate})",
+        "keyword_join": ", ",
+    },
+    "en": {
+        "intro": (
+            "This report summarizes survey results for content related to "
+            "Guan Gong, Guan Yu, Guan Sheng, Guan Sheng Emperor, and Guan Yun Chang "
+            "on YouTube and web search results."
+        ),
+        "table_detail": "Detailed table",
+        "channels_para": (
+            "Among **{total_channels}** channels with at least 2 videos, "
+            "**{top_channel}** leads with **{top_videos}** videos "
+            "({top_pct}%). By account type, {account_breakdown}."
+        ),
+        "channels_top3": "The top three channels are: {top3_list}.",
+        "account_item": "{label} accounts for **{pct}%** ({videos} videos)",
+        "account_join": " and ",
+        "top3_item": "**{name}** ({videos} videos, {pct}%)",
+        "top3_join": ", ",
+        "content_para": (
+            "Out of **{total}** classified results, "
+            "{top_types} account for the largest share."
+        ),
+        "content_type_item": "**{type}** ({pct}%)",
+        "content_type_join": ", ",
+        "year_para": (
+            "The year **{peak_year}** recorded the highest occurrence count "
+            "with **{peak_count}** mentions. Recent trend: {trend_label}."
+        ),
+        "trend_up": "increasing",
+        "trend_down": "decreasing",
+        "trend_stable": "relatively stable",
+        "keywords_para": "The most prominent related keywords include: {keyword_list}.",
+        "keyword_item": "**{keyword}** ({rate})",
+        "keyword_join": ", ",
+    },
+    "zh": {
+        "intro": (
+            "本报告汇总了与关羽、关圣、关圣帝君、关云长相关内容"
+            "在YouTube及网络搜索结果中的调查数据。"
+        ),
+        "table_detail": "详细表格",
+        "channels_para": (
+            "在至少发布2个视频的 **{total_channels}** 个频道中，"
+            "**{top_channel}** 以 **{top_videos}** 个视频位居首位"
+            "（{top_pct}%）。按账号类型，{account_breakdown}。"
+        ),
+        "channels_top3": "排名前三的频道为：{top3_list}。",
+        "account_item": "{label}占 **{pct}%**（{videos} 个视频）",
+        "account_join": "，",
+        "top3_item": "**{name}**（{videos} 个视频，{pct}%）",
+        "top3_join": "、",
+        "content_para": (
+            "在 **{total}** 条已分类结果中，"
+            "{top_types} 占比最高。"
+        ),
+        "content_type_item": "**{type}**（{pct}%）",
+        "content_type_join": "、",
+        "year_para": (
+            "**{peak_year}** 年出现次数最多，"
+            "共 **{peak_count}** 次。近期趋势：{trend_label}。"
+        ),
+        "trend_up": "呈上升趋势",
+        "trend_down": "呈下降趋势",
+        "trend_stable": "相对稳定",
+        "keywords_para": "最相关的关键词包括：{keyword_list}。",
+        "keyword_item": "**{keyword}**（{rate}）",
+        "keyword_join": "、",
+    },
+}
+
 
 def fmt_dot(x, _=None):
     """Format số với dấu chấm phân cách hàng nghìn: 9890000 → 9.890.000"""

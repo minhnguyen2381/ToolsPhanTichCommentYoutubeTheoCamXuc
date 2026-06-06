@@ -1,12 +1,11 @@
 """BƯỚC 7: Trực quan hóa thống kê kênh YouTube và khảo sát Google.
 
-Input:  data/v6_*.csv
-Output: report/<locale>/*.png, report/<locale>/summary.html (vi, en, zh)
+Input:  output/data/v6_*.csv
+Output: output/report/<locale>/*.png, output/report/<locale>/summary.html, summary.md (vi, en, zh)
 """
 
-import sys
 import io
-from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -21,17 +20,15 @@ from i18n_charts import (
     account_type_label,
     fmt_dot,
 )
+from paths import DATA_DIR, REPORT_DIR, ensure_report_dir
+from summary_narrative import (
+    build_summary_tables,
+    rename_summary_columns,
+    write_summary_markdown,
+)
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-REPORT_DIR = Path(__file__).resolve().parent.parent / "report"
-
-_COL_RENAME_KEYS = (
-    "ten_tai_khoan", "loai_tai_khoan", "so_luong_video", "ty_le_pct",
-    "keyword", "content_type", "title", "url", "nam", "so_ket_qua", "ty_le_xuat_hien",
-)
 
 
 def _draw_bar_chart(df, x, y, locale, locale_dir, title_key, xlabel_key, ylabel_key, filename, rotate=45):
@@ -126,24 +123,11 @@ def _plot_top_keywords(df_kw, locale, locale_dir):
     )
 
 
-def _rename_columns(df, locale):
-    if df is None or df.empty:
-        return df
-    st = SUMMARY_TEXT[locale]
-    rename = {col: st[f"col_{col}"] for col in _COL_RENAME_KEYS if col in df.columns}
-    out = df.copy()
-    if "loai_tai_khoan" in out.columns:
-        out["loai_tai_khoan"] = out["loai_tai_khoan"].apply(
-            lambda s: account_type_label(s, locale)
-        )
-    return out.rename(columns=rename)
-
-
 def _df_to_html_table(df, title, locale):
     st = SUMMARY_TEXT[locale]
     if df is None or df.empty:
         return f"<h2>{title}</h2><p><em>{st['no_data']}</em></p>"
-    display_df = _rename_columns(df, locale)
+    display_df = rename_summary_columns(df, locale)
     return f"<h2>{title}</h2>\n{display_df.to_html(index=False, border=0, classes='tbl')}"
 
 
@@ -169,28 +153,8 @@ def _write_summary_html(tables, locale, locale_dir):
     print(f"[OK] [{locale}] {out}")
 
 
-def _build_summary_tables(df_ch, df_ct, df_yr, df_kw, locale):
-    st = SUMMARY_TEXT[locale]
-    ch_display = (
-        df_ch[["ten_tai_khoan", "loai_tai_khoan", "so_luong_video", "ty_le_pct"]]
-        if not df_ch.empty else df_ch
-    )
-    if not df_ct.empty and "keyword" in df_ct.columns:
-        ct_display = df_ct[["keyword", "content_type", "title", "url"]].head(50)
-    elif not df_ct.empty:
-        ct_display = df_ct.head(50)
-    else:
-        ct_display = df_ct
-    return [
-        (st["section_channels"], ch_display),
-        (st["section_google_content"], ct_display),
-        (st["section_year_trend"], df_yr),
-        (st["section_top_keywords"], df_kw),
-    ]
-
-
 def main():
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_report_dir()
 
     ch_file = DATA_DIR / "v6_channel_stats.csv"
     ct_file = DATA_DIR / "v6_google_content_types.csv"
@@ -214,9 +178,10 @@ def main():
         _plot_google_content(df_ct, locale, locale_dir)
         _plot_year_trend(df_yr, locale, locale_dir)
         _plot_top_keywords(df_kw, locale, locale_dir)
-        _write_summary_html(_build_summary_tables(df_ch, df_ct, df_yr, df_kw, locale), locale, locale_dir)
+        _write_summary_html(build_summary_tables(df_ch, df_ct, df_yr, df_kw, locale), locale, locale_dir)
+        write_summary_markdown(df_ch, df_ct, df_yr, df_kw, locale, locale_dir / "summary.md")
 
-    print(f"\n[OK] Biểu đồ kênh & Google → {REPORT_DIR}/{{vi,en,zh}}/")
+    print(f"\n[OK] Biểu đồ kênh & Google → output/report/{{vi,en,zh}}/")
 
 
 if __name__ == "__main__":
