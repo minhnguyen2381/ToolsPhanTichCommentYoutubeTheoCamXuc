@@ -1,8 +1,8 @@
-"""BƯỚC 1b (V5): Lọc data rác khỏi v5_3000_videos_raw.csv.
+"""BƯỚC 2: Lọc data rác khỏi v5_3000_videos_raw.csv.
 Chiến lược 3 lớp:
   1. Blacklist: Loại ngay nếu title chứa từ khóa rác (quân sự, tin tức, YouTuber…)
   2. Whitelist: Giữ lại nếu title chứa ít nhất 1 từ khóa Tam Quốc / Quan Vũ
-  3. Fallback: Không match cả 2 → giữ lại để step2 xử lý bằng AI Embeddings
+  3. Fallback: Không match cả 2 → giữ lại để step3 xử lý bằng AI Embeddings
 
 Input:  data/v5_3000_videos_raw.csv
 Output: data/v5_3000_videos_cleaned.csv

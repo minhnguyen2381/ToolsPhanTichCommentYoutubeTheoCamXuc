@@ -1,4 +1,4 @@
-"""BƯỚC 4 (V5): Cào comment từ playlist.
+"""BƯỚC 8: Cào comment từ playlist.
 Lấy danh sách video từ playlist mục tiêu.
 Cào comment cho mỗi video và lưu lại thành data/v5_comments_raw.csv.
 """

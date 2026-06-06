@@ -1,7 +1,7 @@
-"""BƯỚC 6 (V5): Trực quan hóa kết quả phân tích comment.
+"""BƯỚC 10: Trực quan hóa kết quả phân tích comment.
 - Vẽ biểu đồ Sentiment tổng thể.
 - Vẽ biểu đồ tỷ lệ tính cách đặc trưng của Quan Vũ.
-- Xuất đa ngôn ngữ: vi, en, zh → report/v5/<locale>/
+- Xuất đa ngôn ngữ: vi, en, zh → report/<locale>/
 """
 
 import pandas as pd
@@ -11,7 +11,7 @@ from pathlib import Path
 import sys, io
 from i18n_charts import (
     SUPPORTED_LOCALES, SENTIMENT_LABELS, KEYWORD_LABELS,
-    CHART_TEXT, apply_locale_font,
+    CHART_TEXT, apply_locale_font, fmt_dot,
 )
 
 # Fix encoding trên Windows console
@@ -19,7 +19,7 @@ if sys.stdout.encoding != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-REPORT_DIR = Path(__file__).resolve().parent.parent / "report" / "v5"
+REPORT_DIR = Path(__file__).resolve().parent.parent / "report"
 REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 def plot_sentiment(df_labeled, locale: str, report_dir):
@@ -78,7 +78,7 @@ def plot_keywords(df_kw, locale: str, report_dir):
     
     # In số lên đỉnh cột (format dấu chấm phân cách hàng nghìn)
     for container in ax.containers:
-        ax.bar_label(container, labels=[f"{int(v.get_width()):,}".replace(",", ".") for v in container], padding=3)
+        ax.bar_label(container, labels=[fmt_dot(v.get_width()) for v in container], padding=3)
     
     out_file = report_dir / "personality_traits.png"
     plt.tight_layout()

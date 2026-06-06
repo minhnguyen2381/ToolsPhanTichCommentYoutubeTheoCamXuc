@@ -1,7 +1,7 @@
-"""BƯỚC 3 (V5): Phân loại và trực quan hóa 3000 videos.
+"""BƯỚC 4: Phân loại và trực quan hóa 3000 videos.
 - Phân loại video dựa vào title (15 chủ đề)
 - Vẽ biểu đồ phân bổ chủ đề (số lượng video, lượt view, lượt comment)
-- Lưu vào report/v5/<locale>/ (vi, en, zh)
+- Lưu vào report/<locale>/ (vi, en, zh)
 """
 
 import pandas as pd
@@ -12,7 +12,7 @@ from pathlib import Path
 import sys, io
 from i18n_charts import (
     SUPPORTED_LOCALES, TOPIC_LABELS as I18N_TOPIC_LABELS,
-    CHART_TEXT, apply_locale_font,
+    CHART_TEXT, apply_locale_font, fmt_dot,
 )
 
 # Fix encoding trên Windows console
@@ -20,7 +20,7 @@ if sys.stdout.encoding != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-REPORT_DIR = Path(__file__).resolve().parent.parent / "report" / "v5"
+REPORT_DIR = Path(__file__).resolve().parent.parent / "report"
 
 REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -234,11 +234,6 @@ def classify_topic(title: str) -> str:
     return "khác"
 
 
-def _fmt_dot(x, _=None):
-    """Format số với dấu chấm phân cách hàng nghìn: 9890000 → 9.890.000"""
-    return f"{int(x):,}".replace(",", ".")
-
-
 def _draw_charts(topic_stats, locale: str, report_dir):
     """Vẽ 3 biểu đồ topic cho một locale cụ thể."""
     txt = CHART_TEXT[locale]
@@ -260,7 +255,7 @@ def _draw_charts(topic_stats, locale: str, report_dir):
     plt.ylabel(txt["topic_dist_ylabel"])
     plt.xticks(rotation=45, ha="right")
     for container in ax1.containers:
-        ax1.bar_label(container, labels=[_fmt_dot(v.get_height()) for v in container], padding=3)
+        ax1.bar_label(container, labels=[fmt_dot(v.get_height()) for v in container], padding=3)
     plt.tight_layout()
     plt.savefig(report_dir / "topic_distribution.png", dpi=300)
     plt.close()
@@ -272,9 +267,9 @@ def _draw_charts(topic_stats, locale: str, report_dir):
     plt.xlabel(txt["topic_dist_xlabel"])
     plt.ylabel(txt["topic_views_ylabel"])
     plt.xticks(rotation=45, ha="right")
-    ax.yaxis.set_major_formatter(mticker.FuncFormatter(_fmt_dot))
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(fmt_dot))
     for container in ax.containers:
-        ax.bar_label(container, labels=[_fmt_dot(v.get_height()) for v in container], padding=3)
+        ax.bar_label(container, labels=[fmt_dot(v.get_height()) for v in container], padding=3)
     plt.tight_layout()
     plt.savefig(report_dir / "topic_views.png", dpi=300)
     plt.close()
@@ -286,9 +281,9 @@ def _draw_charts(topic_stats, locale: str, report_dir):
     plt.xlabel(txt["topic_dist_xlabel"])
     plt.ylabel(txt["topic_comments_ylabel"])
     plt.xticks(rotation=45, ha="right")
-    ax2.yaxis.set_major_formatter(mticker.FuncFormatter(_fmt_dot))
+    ax2.yaxis.set_major_formatter(mticker.FuncFormatter(fmt_dot))
     for container in ax2.containers:
-        ax2.bar_label(container, labels=[_fmt_dot(v.get_height()) for v in container], padding=3)
+        ax2.bar_label(container, labels=[fmt_dot(v.get_height()) for v in container], padding=3)
     plt.tight_layout()
     plt.savefig(report_dir / "topic_comments.png", dpi=300)
     plt.close()

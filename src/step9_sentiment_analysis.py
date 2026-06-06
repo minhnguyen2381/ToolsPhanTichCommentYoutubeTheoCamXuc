@@ -1,4 +1,4 @@
-"""BƯỚC 5 (V5): Phân tích cảm xúc và trích xuất keyword.
+"""BƯỚC 9: Phân tích cảm xúc và trích xuất keyword.
 - Dùng PhoBERT đánh giá sentiment (tích cực, tiêu cực, trung tính) cho comment.
 - Trích xuất keyword phổ biến (tính cách Quan Vũ).
 """

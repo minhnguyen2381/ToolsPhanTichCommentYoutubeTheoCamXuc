@@ -1,4 +1,4 @@
-"""BƯỚC 2 (V5): Lọc video (Hybrid Approach).
+"""BƯỚC 3: Lọc video (Hybrid Approach).
 Lọc các video từ v5_3000_videos_raw.csv:
 - Level 1: Lọc bằng hệ thống Keyword Scoring.
 - Level 2: Các video rớt Level 1 sẽ được AI Embeddings chấm điểm.
@@ -65,7 +65,7 @@ def main():
         in_file = cleaned_file
     elif raw_file.exists():
         in_file = raw_file
-        print("[!] Chưa chạy step1b_clean_raw_data.py → dùng file raw.")
+        print("[!] Chưa chạy step2_clean_raw_data.py → dùng file raw.")
     else:
         print(f"[!] Không tìm thấy file dữ liệu video.")
         return
