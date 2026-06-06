@@ -1,4 +1,6 @@
-"""BƯỚC 6 (V6): Khảo sát 5 keyword trên Google.
+"""BƯỚC 6 (V6): Khảo sát 5 keyword trên web search (Bing/Brave qua ddgs).
+
+Google scrape trực tiếp thường bị chặn; pipeline dùng ddgs thay thế.
 
 Output:
   data/v6_google_results_raw.csv
@@ -87,12 +89,17 @@ def _bigrams(tokens):
     return [" ".join(tokens[i : i + 2]) for i in range(len(tokens) - 1)]
 
 
+RAW_COLUMNS = ["keyword", "title", "url", "description", "domain"]
+
+
 def crawl_google():
     rows = []
+    per_keyword = {}
     for kw in KEYWORDS:
         print(f"\n{'='*60}")
-        print(f"[*] Google search: {kw} (max {GOOGLE_NUM_RESULTS})")
+        print(f"[*] Web search: {kw} (max {GOOGLE_NUM_RESULTS})")
         print(f"{'='*60}")
+        before = len(rows)
         try:
             for r in tqdm(
                 iter_google_search(kw, num_results=GOOGLE_NUM_RESULTS),
@@ -108,7 +115,15 @@ def crawl_google():
                 })
         except Exception as e:
             print(f"[!] Lỗi search '{kw}': {str(e)[:120]}")
-    return pd.DataFrame(rows)
+        per_keyword[kw] = len(rows) - before
+        print(f"[*] '{kw}': {per_keyword[kw]} kết quả")
+    return pd.DataFrame(rows), per_keyword
+
+
+def _write_empty_raw_diagnostic():
+    raw_file = DATA_DIR / "v6_google_results_raw.csv"
+    pd.DataFrame(columns=RAW_COLUMNS).to_csv(raw_file, index=False, encoding="utf-8-sig")
+    print(f"[*] Đã ghi file diagnostic (rỗng): {raw_file.name}")
 
 
 def build_content_types(df_raw):
@@ -184,10 +199,17 @@ def build_top_keywords(df_raw):
 
 
 def main():
-    df_raw = crawl_google()
+    df_raw, per_keyword = crawl_google()
+
+    print("\n=== TÓM TẮT KẾT QUẢ THEO KEYWORD ===")
+    for kw, cnt in per_keyword.items():
+        print(f"  {kw}: {cnt}")
+    print(f"  Tổng: {len(df_raw)}")
+
     if df_raw.empty:
-        print("[!] Không thu được kết quả Google nào.")
-        return
+        print("[!] Không thu được kết quả tìm kiếm nào.")
+        _write_empty_raw_diagnostic()
+        sys.exit(1)
 
     raw_file = DATA_DIR / "v6_google_results_raw.csv"
     df_raw.to_csv(raw_file, index=False, encoding="utf-8-sig")

@@ -1,10 +1,21 @@
-"""Wrapper googlesearch-python — tìm kiếm Google với retry và rate-limit."""
+"""Wrapper tìm kiếm web qua ddgs (Bing / Brave / DuckDuckGo).
+
+googlesearch-python scrape trực tiếp Google thường bị chặn (0 kết quả).
+ddgs ổn định hơn cho pipeline khảo sát keyword.
+"""
 
 import time
 from dataclasses import dataclass
-from typing import Iterator, Optional
+from typing import Iterator, List, Optional
 
-from googlesearch import search
+try:
+    from ddgs import DDGS
+except ImportError as e:
+    raise ImportError(
+        "Thiếu package ddgs. Chạy: pip install ddgs"
+    ) from e
+
+BACKEND_CHAIN = ("bing", "auto", "brave", "duckduckgo")
 
 
 @dataclass
@@ -12,6 +23,52 @@ class GoogleSearchResult:
     title: str
     url: str
     description: str
+
+
+def _ddgs_region(region: str, lang: str) -> str:
+    if "-" in region:
+        return region
+    if region == "vn":
+        return "vn-vi"
+    if lang == "vi":
+        return f"{region}-vi" if region else "vn-vi"
+    return region or "wt-wt"
+
+
+def _map_item(item: dict) -> Optional[GoogleSearchResult]:
+    url = (item.get("href") or item.get("url") or "").strip()
+    if not url:
+        return None
+    return GoogleSearchResult(
+        title=item.get("title") or "",
+        url=url,
+        description=item.get("body") or item.get("description") or "",
+    )
+
+
+def _fetch_backend(
+    query: str,
+    num_results: int,
+    region: str,
+    lang: str,
+    backend: str,
+) -> List[GoogleSearchResult]:
+    raw = DDGS().text(
+        query,
+        region=_ddgs_region(region, lang),
+        max_results=num_results,
+        backend=backend,
+    )
+    out: List[GoogleSearchResult] = []
+    seen: set[str] = set()
+    for item in raw:
+        mapped = _map_item(item)
+        if mapped and mapped.url not in seen:
+            seen.add(mapped.url)
+            out.append(mapped)
+            if len(out) >= num_results:
+                break
+    return out
 
 
 def iter_google_search(
@@ -23,40 +80,43 @@ def iter_google_search(
     retries: int = 3,
     backoff: float = 2.0,
 ) -> Iterator[GoogleSearchResult]:
-    """Yield kết quả Google Search. Retry khi lỗi mạng tạm thời."""
+    """Yield kết quả tìm kiếm web. Thử lần lượt Bing → auto → Brave → DuckDuckGo."""
     last_err: Optional[Exception] = None
-    for attempt in range(retries):
-        try:
-            count = 0
-            for item in search(
-                query,
-                num_results=num_results,
-                lang=lang,
-                region=region,
-                advanced=True,
-                sleep_interval=sleep_interval,
-                unique=True,
-            ):
-                title = getattr(item, "title", "") or ""
-                url = getattr(item, "url", "") or ""
-                description = getattr(item, "description", "") or ""
-                if not url:
-                    continue
-                yield GoogleSearchResult(title=title, url=url, description=description)
-                count += 1
-                if count >= num_results:
+
+    for backend in BACKEND_CHAIN:
+        for attempt in range(retries):
+            try:
+                if sleep_interval > 0:
+                    time.sleep(sleep_interval if attempt == 0 else backoff * (2 ** attempt))
+                results = _fetch_backend(query, num_results, region, lang, backend)
+                if results:
+                    print(
+                        f"  [*] Backend '{backend}': {len(results)} kết quả cho '{query}'"
+                    )
+                    yield from results
                     return
-            return
-        except Exception as e:
-            last_err = e
-            msg = str(e).lower()
-            if attempt < retries - 1 and any(
-                k in msg for k in ("429", "timeout", "timed out", "connection", "blocked")
-            ):
-                wait = backoff * (2 ** attempt)
-                print(f"  [!] Google search lỗi, thử lại sau {wait:.0f}s: {str(e)[:80]}")
-                time.sleep(wait)
-                continue
-            raise
+                break
+            except Exception as e:
+                last_err = e
+                msg = str(e).lower()
+                retryable = any(
+                    k in msg
+                    for k in ("429", "timeout", "timed out", "connection", "blocked")
+                )
+                if attempt < retries - 1 and retryable:
+                    wait = backoff * (2 ** attempt)
+                    print(f"  [!] {backend} lỗi, thử lại sau {wait:.0f}s: {str(e)[:80]}")
+                    time.sleep(wait)
+                    continue
+                break
+
+    msg = (
+        f"  [!] Không thu được kết quả cho '{query}' — "
+        "thử lại sau hoặc kiểm tra mạng/VPN."
+    )
+    try:
+        print(msg)
+    except UnicodeEncodeError:
+        print(msg.encode("ascii", errors="replace").decode("ascii"))
     if last_err:
         raise last_err
