@@ -16,6 +16,7 @@ STEPS = [
     #("Bước 8 — Crawl comment playlist", "step8_crawl_comments.py"),
     #("Bước 9 — Phân tích sentiment", "step9_sentiment_analysis.py"),
     #("Bước 10 — Phân loại tính cách và vẽ biểu đồ", "step10_visualize_sentiment.py"),
+    ("Bước 11 — Nén output thành zip", "step11_zip_output.py"),
 ]
 
 def main():
@@ -27,7 +28,7 @@ def main():
         if ret != 0:
             print(f"[FAIL] {script} trả về mã {ret}. Dừng pipeline.")
             sys.exit(ret)
-    print("\n[DONE] Pipeline hoàn tất. Xem data/ và report/{vi,en,zh}/.")
+    print("\n[DONE] Pipeline hoàn tất. Xem output/data/, output/report/{vi,en,zh}/ và file output_*.zip.")
 
 
 if __name__ == "__main__":
