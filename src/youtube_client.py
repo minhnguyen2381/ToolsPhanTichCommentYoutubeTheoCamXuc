@@ -127,6 +127,10 @@ def get_video_stats(video_ids, sleep=0.2):
                 "videoId": info.get("id", vid),
                 "title": info.get("title", ""),
                 "channel": info.get("channel") or info.get("uploader", ""),
+                "channel_id": info.get("channel_id") or info.get("uploader_id", ""),
+                "channel_url": info.get("channel_url") or info.get("uploader_url", ""),
+                "channel_is_verified": bool(info.get("channel_is_verified")),
+                "channel_follower_count": int(info.get("channel_follower_count") or 0),
                 "publishedAt": _iso_date(info.get("upload_date", "")),
                 "views": int(info.get("view_count") or 0),
                 "likes": int(info.get("like_count") or 0),
@@ -135,6 +139,53 @@ def get_video_stats(video_ids, sleep=0.2):
             if sleep:
                 time.sleep(sleep)
     return rows
+
+
+def get_channel_info(channel_url, sleep=0.2):
+    """Lấy metadata kênh từ URL. Trả dict hoặc None nếu lỗi."""
+    if not channel_url:
+        return None
+    url = channel_url.rstrip("/")
+    if not url.startswith("http"):
+        url = f"https://www.youtube.com/{url.lstrip('/')}"
+    try:
+        with _ydl() as ydl:
+            info = safe_call(ydl.extract_info, url, download=False)
+    except Exception as e:
+        print(f"  [!] Bỏ qua kênh {url}: {str(e)[:100]}")
+        return None
+    if sleep:
+        time.sleep(sleep)
+    return {
+        "channel": info.get("channel") or info.get("uploader", ""),
+        "channel_id": info.get("channel_id") or info.get("id", ""),
+        "channel_url": info.get("channel_url") or info.get("webpage_url", url),
+        "channel_is_verified": bool(info.get("channel_is_verified")),
+        "channel_follower_count": int(info.get("channel_follower_count") or 0),
+    }
+
+
+def get_video_channel_metadata(video_id, sleep=0.2):
+    """Lấy metadata kênh từ một videoId (dùng backfill channel_id)."""
+    try:
+        with _ydl() as ydl:
+            info = safe_call(
+                ydl.extract_info,
+                f"https://www.youtube.com/watch?v={video_id}",
+                download=False,
+            )
+    except Exception as e:
+        print(f"  [!] Bỏ qua video {video_id}: {str(e)[:100]}")
+        return None
+    if sleep:
+        time.sleep(sleep)
+    return {
+        "channel": info.get("channel") or info.get("uploader", ""),
+        "channel_id": info.get("channel_id") or info.get("uploader_id", ""),
+        "channel_url": info.get("channel_url") or info.get("uploader_url", ""),
+        "channel_is_verified": bool(info.get("channel_is_verified")),
+        "channel_follower_count": int(info.get("channel_follower_count") or 0),
+    }
 
 
 def list_playlist_videos(playlist_id):
