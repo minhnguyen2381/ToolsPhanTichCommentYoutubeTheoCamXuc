@@ -17,8 +17,12 @@ from i18n_charts import (
     CHART_TEXT,
     SUMMARY_TEXT,
     apply_locale_font,
+    apply_latin_xticklabels,
     account_type_label,
+    content_type_label,
     fmt_dot,
+    google_category_label,
+    google_keyword_label,
 )
 from paths import DATA_DIR, REPORT_DIR, ensure_report_dir
 from summary_narrative import (
@@ -31,7 +35,10 @@ if sys.stdout.encoding != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 
-def _draw_bar_chart(df, x, y, locale, locale_dir, title_key, xlabel_key, ylabel_key, filename, rotate=45):
+def _draw_bar_chart(
+    df, x, y, locale, locale_dir, title_key, xlabel_key, ylabel_key, filename,
+    rotate=45, latin_xticks=False,
+):
     txt = CHART_TEXT[locale]
     sns.set_theme(style="whitegrid")
     apply_locale_font(locale)
@@ -42,6 +49,8 @@ def _draw_bar_chart(df, x, y, locale, locale_dir, title_key, xlabel_key, ylabel_
     plt.xlabel(txt[xlabel_key])
     plt.ylabel(txt[ylabel_key])
     plt.xticks(rotation=rotate, ha="right")
+    if latin_xticks:
+        apply_latin_xticklabels(ax, locale)
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(fmt_dot))
     for container in ax.containers:
         ax.bar_label(container, labels=[fmt_dot(v.get_height()) for v in container], padding=3)
@@ -61,6 +70,7 @@ def _plot_channels(df_ch, locale, locale_dir):
         locale, locale_dir,
         "channel_top15_title", "channel_top15_xlabel", "channel_top15_ylabel",
         "channel_top15.png",
+        latin_xticks=True,
     )
 
     type_counts = df_ch.groupby("loai_tai_khoan")["so_luong_video"].sum().reset_index()
@@ -81,8 +91,12 @@ def _plot_google_content(df_ct, locale, locale_dir):
     if df_ct.empty or "content_type" not in df_ct.columns:
         return
     summary = df_ct.groupby("content_type").size().reset_index(name="so_ket_qua")
+    summary = summary.copy()
+    summary["label"] = summary["content_type"].apply(
+        lambda v: content_type_label(v, locale)
+    )
     _draw_bar_chart(
-        summary, "content_type", "so_ket_qua",
+        summary, "label", "so_ket_qua",
         locale, locale_dir,
         "google_content_types_title", "google_content_types_xlabel", "google_content_types_ylabel",
         "google_content_types.png",
@@ -97,12 +111,17 @@ def _plot_year_trend(df_yr, locale, locale_dir):
     sns.set_theme(style="whitegrid")
     apply_locale_font(locale)
 
+    plot_df = df_yr[df_yr["nam"] >= 2000].copy()
+    if plot_df.empty:
+        return
+
     plt.figure(figsize=(14, 6))
-    ax = sns.lineplot(data=df_yr, x="nam", y="so_ket_qua", marker="o")
+    ax = sns.lineplot(data=plot_df, x="nam", y="so_ket_qua", marker="o")
     plt.title(txt["google_year_trend_title"], fontsize=14)
     plt.xlabel(txt["google_year_trend_xlabel"])
     plt.ylabel(txt["google_year_trend_ylabel"])
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(fmt_dot))
+    plt.xlim(2000, plot_df["nam"].max())
     plt.xticks(rotation=45)
     plt.tight_layout()
     out = locale_dir / "google_year_trend.png"
@@ -114,13 +133,43 @@ def _plot_year_trend(df_yr, locale, locale_dir):
 def _plot_top_keywords(df_kw, locale, locale_dir):
     if df_kw.empty:
         return
-    _draw_bar_chart(
-        df_kw, "keyword", "ty_le_xuat_hien",
-        locale, locale_dir,
-        "google_top_keywords_title", "google_top_keywords_xlabel", "google_top_keywords_ylabel",
-        "google_top_keywords.png",
-        rotate=60,
+    txt = CHART_TEXT[locale]
+    plot_df = df_kw.copy()
+    plot_df["keyword_display"] = plot_df["keyword"].apply(
+        lambda k: google_keyword_label(k, locale)
     )
+    if "category" in plot_df.columns:
+        plot_df["category_display"] = plot_df["category"].apply(
+            lambda c: google_category_label(c, locale)
+        )
+
+    sns.set_theme(style="whitegrid")
+    apply_locale_font(locale)
+
+    plt.figure(figsize=(14, 8))
+    hue_col = "category_display" if "category_display" in plot_df.columns else None
+    ax = sns.barplot(
+        data=plot_df,
+        x="keyword_display",
+        y="ty_le_xuat_hien",
+        hue=hue_col,
+        palette="Set2" if hue_col else "viridis",
+        dodge=False,
+    )
+    if hue_col:
+        plt.legend(title=txt.get("google_top_keywords_hue", "Category"), bbox_to_anchor=(1.02, 1), loc="upper left")
+    plt.title(txt["google_top_keywords_title"], fontsize=14)
+    plt.xlabel(txt["google_top_keywords_xlabel"])
+    plt.ylabel(txt["google_top_keywords_ylabel"])
+    plt.xticks(rotation=60, ha="right")
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(fmt_dot))
+    for container in ax.containers:
+        ax.bar_label(container, labels=[fmt_dot(v.get_height()) for v in container], padding=3)
+    plt.tight_layout()
+    out = locale_dir / "google_top_keywords.png"
+    plt.savefig(out, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"  → [{locale}] {out.name}")
 
 
 def _df_to_html_table(df, title, locale):

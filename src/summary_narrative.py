@@ -8,12 +8,16 @@ from i18n_charts import (
     NARRATIVE_TEXT,
     SUMMARY_TEXT,
     account_type_label,
+    content_type_label,
     fmt_dot,
+    google_category_label,
+    google_keyword_label,
 )
 
 _COL_RENAME_KEYS = (
     "ten_tai_khoan", "loai_tai_khoan", "so_luong_video", "ty_le_pct",
     "keyword", "content_type", "title", "url", "nam", "so_ket_qua", "ty_le_xuat_hien",
+    "category",
 )
 
 
@@ -26,6 +30,18 @@ def rename_summary_columns(df, locale):
     if "loai_tai_khoan" in out.columns:
         out["loai_tai_khoan"] = out["loai_tai_khoan"].apply(
             lambda s: account_type_label(s, locale)
+        )
+    if "keyword" in out.columns:
+        out["keyword"] = out["keyword"].apply(
+            lambda k: google_keyword_label(k, locale)
+        )
+    if "category" in out.columns:
+        out["category"] = out["category"].apply(
+            lambda c: google_category_label(c, locale)
+        )
+    if "content_type" in out.columns:
+        out["content_type"] = out["content_type"].apply(
+            lambda v: content_type_label(v, locale)
         )
     return out.rename(columns=rename)
 
@@ -71,7 +87,7 @@ def _df_to_markdown_table(df):
     return "\n".join([headers, sep, *rows])
 
 
-def _compute_summary_metrics(df_ch, df_ct, df_yr, df_kw):
+def _compute_summary_metrics(df_ch, df_ct, df_yr, df_kw, locale):
     metrics = {}
 
     if not df_ch.empty:
@@ -112,7 +128,7 @@ def _compute_summary_metrics(df_ch, df_ct, df_yr, df_kw):
         metrics["total_content"] = fmt_dot(total)
         metrics["top_content_types"] = [
             {
-                "type": content_type,
+                "type": content_type_label(content_type, locale),
                 "count": fmt_dot(count),
                 "pct": round(100.0 * count / total, 1),
             }
@@ -150,7 +166,7 @@ def _compute_summary_metrics(df_ch, df_ct, df_yr, df_kw):
         metrics["has_keywords"] = True
         metrics["top_keywords"] = [
             {
-                "keyword": row["keyword"],
+                "keyword": google_keyword_label(row["keyword"], locale),
                 "rate": row["ty_le_xuat_hien"],
             }
             for _, row in df_kw.head(5).iterrows()
@@ -175,7 +191,7 @@ def _section_with_table(title, paragraph, df, locale, nt, st):
 def generate_summary_markdown(df_ch, df_ct, df_yr, df_kw, locale):
     st = SUMMARY_TEXT[locale]
     nt = NARRATIVE_TEXT[locale]
-    metrics = _compute_summary_metrics(df_ch, df_ct, df_yr, df_kw)
+    metrics = _compute_summary_metrics(df_ch, df_ct, df_yr, df_kw, locale)
     tables = build_summary_tables(df_ch, df_ct, df_yr, df_kw, locale)
 
     parts = [f"# {st['page_heading']}", "", nt["intro"], ""]
