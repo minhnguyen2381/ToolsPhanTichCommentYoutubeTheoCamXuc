@@ -1,6 +1,7 @@
-"""BƯỚC 6 (V6): Khảo sát 5 keyword trên web search (Bing/Brave qua ddgs).
+"""BƯỚC 6 (V6): Khảo sát keyword Tam quốc trên web search (Bing/Brave qua ddgs).
 
 Google scrape trực tiếp thường bị chặn; pipeline dùng ddgs thay thế.
+Query ghép — mỗi query gắn anchor Tam quốc (xem tamquoc_keywords.GOOGLE_SEARCH_QUERIES).
 
 Output:
   output/data/v6_google_results_raw.csv
@@ -13,6 +14,7 @@ import io
 import re
 import sys
 from collections import Counter
+from datetime import datetime
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -20,21 +22,22 @@ from tqdm import tqdm
 
 from google_client import iter_google_search
 from paths import DATA_DIR, ensure_data_dir
+from tamquoc_keywords import (
+    CANONICAL_TO_CATEGORY,
+    GOOGLE_SEARCH_QUERIES,
+    is_result_relevant,
+    is_seed_keyword,
+    match_tamquoc_keywords,
+)
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-KEYWORDS = [
-    "Quan Công",
-    "Quan Vũ",
-    "Quan Thánh",
-    "Quan Thánh Đế Quân",
-    "Quan Vân Trường",
-]
-
-GOOGLE_NUM_RESULTS = 100
+GOOGLE_NUM_RESULTS = 50
 TOP_KEYWORDS = 15
-YEAR_RE = re.compile(r"\b(1980|198[1-9]|199\d|20[0-2]\d)\b")
+MIN_YEAR = 2000
+MAX_YEAR = datetime.now().year
+YEAR_RE = re.compile(r"\b(20[0-2]\d|2000)\b")
 
 CONTENT_TYPE_RULES = [
     ("Sách", ["goodreads", "nxb", "sách", "book", "wikipedia.org/wiki/sách", "amazon.com"]),
@@ -44,12 +47,6 @@ CONTENT_TYPE_RULES = [
     ("Giải trí", ["youtube.com", "tiktok.com", "game", "facebook.com", "reddit.com"]),
     ("Điện ảnh", ["imdb", "phim", "movie", "netflix", "letterboxd"]),
 ]
-
-STOPWORDS = {
-    "và", "của", "là", "có", "trong", "với", "một", "các", "được", "cho", "từ",
-    "the", "a", "an", "of", "in", "on", "to", "for", "is", "are", "was", "were",
-    "quan", "công", "vũ", "thánh", "vân", "trường", "đế", "quân", "guan", "yu",
-}
 
 
 def _domain(url):
@@ -71,19 +68,7 @@ def classify_content(url, title, description):
 def extract_years(text):
     if not isinstance(text, str):
         return []
-    return [int(y) for y in YEAR_RE.findall(text) if 1980 <= int(y) <= 2026]
-
-
-def _tokenize(text):
-    if not isinstance(text, str):
-        return []
-    text = re.sub(r"[^\w\s]", " ", text.lower())
-    tokens = text.split()
-    return [t for t in tokens if len(t) > 2 and t not in STOPWORDS]
-
-
-def _bigrams(tokens):
-    return [" ".join(tokens[i : i + 2]) for i in range(len(tokens) - 1)]
+    return [int(y) for y in YEAR_RE.findall(text) if MIN_YEAR <= int(y) <= MAX_YEAR]
 
 
 RAW_COLUMNS = ["keyword", "title", "url", "description", "domain"]
@@ -91,18 +76,22 @@ RAW_COLUMNS = ["keyword", "title", "url", "description", "domain"]
 
 def crawl_google():
     rows = []
+    seen_urls: set[str] = set()
     per_keyword = {}
-    for kw in KEYWORDS:
+    for kw in GOOGLE_SEARCH_QUERIES:
         print(f"\n{'='*60}")
         print(f"[*] Web search: {kw} (max {GOOGLE_NUM_RESULTS})")
         print(f"{'='*60}")
-        before = len(rows)
+        added = 0
         try:
             for r in tqdm(
                 iter_google_search(kw, num_results=GOOGLE_NUM_RESULTS),
                 desc=kw,
                 total=GOOGLE_NUM_RESULTS,
             ):
+                if r.url in seen_urls:
+                    continue
+                seen_urls.add(r.url)
                 rows.append({
                     "keyword": kw,
                     "title": r.title,
@@ -110,11 +99,28 @@ def crawl_google():
                     "description": r.description,
                     "domain": _domain(r.url),
                 })
+                added += 1
         except Exception as e:
             print(f"[!] Lỗi search '{kw}': {str(e)[:120]}")
-        per_keyword[kw] = len(rows) - before
-        print(f"[*] '{kw}': {per_keyword[kw]} kết quả")
+        per_keyword[kw] = added
+        print(f"[*] '{kw}': {added} kết quả mới (dedupe URL)")
     return pd.DataFrame(rows), per_keyword
+
+
+def filter_relevant(df_raw):
+    """Lọc kết quả không liên quan Tam quốc."""
+    if df_raw.empty:
+        return df_raw
+    mask = df_raw.apply(
+        lambda r: is_result_relevant(
+            r.get("title", ""), r.get("description", ""), r.get("keyword", "")
+        ),
+        axis=1,
+    )
+    filtered = df_raw[mask].reset_index(drop=True)
+    dropped = len(df_raw) - len(filtered)
+    print(f"[*] Lọc relevance: giữ {len(filtered)}/{len(df_raw)} (bỏ {dropped})")
+    return filtered
 
 
 def _write_empty_raw_diagnostic():
@@ -160,7 +166,7 @@ def build_year_trend(df_raw):
     ]
     df = pd.DataFrame(rows)
     df.to_csv(DATA_DIR / "v6_google_year_trend.csv", index=False, encoding="utf-8-sig")
-    print(f"[*] Xu thế năm: {matched}/{len(df_raw)} kết quả có năm trong text")
+    print(f"[*] Xu thế năm ({MIN_YEAR}–{MAX_YEAR}): {matched}/{len(df_raw)} kết quả có năm trong text")
     return df
 
 
@@ -168,30 +174,31 @@ def build_top_keywords(df_raw):
     counter = Counter()
     for _, row in df_raw.iterrows():
         text = f"{row.get('title', '')} {row.get('description', '')}"
-        tokens = _tokenize(text)
-        for tok in tokens:
-            counter[tok] += 1
-        for bg in _bigrams(tokens):
-            counter[bg] += 1
+        for canonical in match_tamquoc_keywords(text):
+            if is_seed_keyword(canonical):
+                continue
+            counter[canonical] += 1
 
-    seed_lower = {k.lower() for k in KEYWORDS}
-    for kw in seed_lower:
-        counter.pop(kw, None)
-        for part in kw.split():
-            counter.pop(part, None)
-
-    total = sum(counter.values()) or 1
+    total_rows = len(df_raw) or 1
     top = counter.most_common(TOP_KEYWORDS)
     rows = []
     for i, (kw, cnt) in enumerate(top, 1):
         rows.append({
             "stt": i,
             "keyword": kw,
+            "category": CANONICAL_TO_CATEGORY.get(kw, "khác"),
             "ty_le_xuat_hien": cnt,
-            "ty_le_pct": round(cnt / total * 100, 2),
+            "ty_le_pct": round(cnt / total_rows * 100, 2),
         })
     df = pd.DataFrame(rows)
     df.to_csv(DATA_DIR / "v6_google_top_keywords.csv", index=False, encoding="utf-8-sig")
+
+    if not df.empty and "category" in df.columns:
+        by_cat = df.groupby("category").size()
+        print("\n=== PHÂN LOẠI TOP KEYWORD (theo category) ===")
+        for cat, n in by_cat.items():
+            print(f"  {cat}: {n}")
+
     return df
 
 
@@ -199,13 +206,19 @@ def main():
     ensure_data_dir()
     df_raw, per_keyword = crawl_google()
 
-    print("\n=== TÓM TẮT KẾT QUẢ THEO KEYWORD ===")
+    print("\n=== TÓM TẮT KẾT QUẢ THEO KEYWORD (trước lọc) ===")
     for kw, cnt in per_keyword.items():
         print(f"  {kw}: {cnt}")
-    print(f"  Tổng: {len(df_raw)}")
+    print(f"  Tổng (dedupe URL): {len(df_raw)}")
 
     if df_raw.empty:
         print("[!] Không thu được kết quả tìm kiếm nào.")
+        _write_empty_raw_diagnostic()
+        sys.exit(1)
+
+    df_raw = filter_relevant(df_raw)
+    if df_raw.empty:
+        print("[!] Không còn kết quả sau lọc relevance.")
         _write_empty_raw_diagnostic()
         sys.exit(1)
 
@@ -219,7 +232,7 @@ def main():
 
     build_year_trend(df_raw)
     top_df = build_top_keywords(df_raw)
-    print("\n=== TOP 15 KEYWORD LIÊN QUAN ===")
+    print("\n=== TOP 15 KEYWORD TAM QUỐC LIÊN QUAN ===")
     print(top_df.to_string(index=False))
     print("\n[OK] Hoàn tất step6 — xem output/data/v6_google_*.csv")
 
