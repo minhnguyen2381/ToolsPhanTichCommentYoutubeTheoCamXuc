@@ -18,7 +18,7 @@
 
 2.Liệt kê các thông tin về các keyword này thuộc dạng nào, ví dụ như: sách, nghiên cứu, báo cáo, học thuật, giải trí, điện ảnh...( cần phân loại)
 
-3.Cần có bảng đánh giá xu thế xem tỷ lệ bài đăng xuất hiện nhiều vào năm nào (Từ 1980-nay)
+3.Cần có bảng đánh giá xu thế xem tỷ lệ bài đăng xuất hiện nhiều vào năm nào (Từ 2000-nay; query ghép Tam quốc)
 
 4.Lọc ra top 15 keyword liên quan đến ông nhiều nhất trên google như bảng mẫu dưới đây:
 
