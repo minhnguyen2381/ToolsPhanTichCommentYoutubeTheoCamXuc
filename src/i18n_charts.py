@@ -137,7 +137,222 @@ KEYWORD_LABELS = {
     },
 }
 
-# ── ACCOUNT TYPE LABELS (step5 slugs) ─────────────────────────────────────────
+# ── GOOGLE TAM QUỐC KEYWORD LABELS (step6/step7) ─────────────────────────────
+GOOGLE_CATEGORY_LABELS = {
+    "vi": {
+        "nhân_vật": "Nhân vật",
+        "địa_danh_sự_kiện": "Địa danh / Sự kiện",
+        "khái_niệm": "Khái niệm",
+        "tín_ngưỡng": "Tín ngưỡng",
+        "vũ_khí_biểu_tượng": "Vũ khí / Biểu tượng",
+        "nội_dung": "Nội dung",
+        "khác": "Khác",
+    },
+    "en": {
+        "nhân_vật": "Character",
+        "địa_danh_sự_kiện": "Place / Event",
+        "khái_niệm": "Concept",
+        "tín_ngưỡng": "Belief / Worship",
+        "vũ_khí_biểu_tượng": "Weapon / Symbol",
+        "nội_dung": "Content",
+        "khác": "Other",
+    },
+    "zh": {
+        "nhân_vật": "人物",
+        "địa_danh_sự_kiện": "地名/事件",
+        "khái_niệm": "概念",
+        "tín_ngưỡng": "信仰",
+        "vũ_khí_biểu_tượng": "武器/象征",
+        "nội_dung": "内容",
+        "khác": "其他",
+    },
+}
+
+GOOGLE_TAMQUOC_LABELS = {
+    "en": {
+        "Lưu Bị": "Liu Bei",
+        "Trương Phi": "Zhang Fei",
+        "Tào Tháo": "Cao Cao",
+        "Triệu Vân": "Zhao Yun",
+        "Gia Cát Lượng": "Zhuge Liang",
+        "Lữ Bố": "Lu Bu",
+        "Điêu Thuyền": "Diao Chan",
+        "Đổng Trác": "Dong Zhuo",
+        "Tôn Quyền": "Sun Quan",
+        "Chu Du": "Zhou Yu",
+        "Viên Thiệu": "Yuan Shao",
+        "Tư Mã Ý": "Sima Yi",
+        "Mã Siêu": "Ma Chao",
+        "Hoàng Trung": "Huang Zhong",
+        "Lục Tốn": "Lu Xun",
+        "Hứa Chử": "Xu Chu",
+        "Điển Vi": "Dian Wei",
+        "Trương Liêu": "Zhang Liao",
+        "Bàng Thống": "Pang Tong",
+        "Pháp Chính": "Fa Zheng",
+        "Cam Ninh": "Gan Ning",
+        "Thái Sử Từ": "Taishi Ci",
+        "Lã Mông": "Lu Meng",
+        "Nhan Lương": "Yan Liang",
+        "Văn Xú": "Wen Chou",
+        "Hoa Hùng": "Hua Xiong",
+        "Hoa Đà": "Hua Tuo",
+        "Quan Bình": "Guan Ping",
+        "Quan Hưng": "Guan Xing",
+        "Bàng Đức": "Pang De",
+        "Ngụy Diên": "Wei Yan",
+        "Tôn Kiên": "Sun Jian",
+        "Tôn Sách": "Sun Ce",
+        "Tào Nhân": "Cao Ren",
+        "Tào Hồng": "Cao Hong",
+        "Hạ Hầu Đôn": "Xiahou Dun",
+        "Lý Túc": "Li Su",
+        "Nezha": "Nezha",
+        "Kinh Châu": "Jingzhou",
+        "Xích Bích": "Red Cliffs",
+        "Mạch Thành": "Fan Castle",
+        "Trường Bản": "Changban",
+        "Đào Viên": "Peach Garden",
+        "Phượng Nghi Đình": "Phoenix Pavilion",
+        "Ngọa Long": "Sleeping Dragon",
+        "Khổng Thành Kế": "Empty City Stratagem",
+        "Bạch Đế Thành": "White Emperor City",
+        "Hán Trung": "Hanzhong",
+        "Ngũ Trượng Nguyên": "Wuzhang Plains",
+        "Quan Độ": "Battle of Guandu",
+        "Hoa Dung": "Sliding Through",
+        "Thục Hán": "Shu Han",
+        "Ngụy Quốc": "Wei Kingdom",
+        "Đông Ngô": "Eastern Wu",
+        "Tam quốc": "Three Kingdoms",
+        "Tam quốc diễn nghĩa": "Romance of the Three Kingdoms",
+        "Ngũ hổ tướng": "Five Tiger Generals",
+        "Trung nghĩa": "Righteousness",
+        "Trung thành": "Loyalty",
+        "Nhân nghĩa": "Benevolence",
+        "Nghĩa khí": "Chivalry",
+        "Võ thánh": "Martial Saint",
+        "Chiến thần": "God of War",
+        "Kiêu ngạo": "Arrogance",
+        "Lịch sử": "History",
+        "Diễn nghĩa": "Romance Fiction",
+        "Hào kiệt": "Hero",
+        "Ngũ hổ": "Five Tigers",
+        "Cải lương": "Cai Luong Opera",
+        "Quan Thánh Đế Quân": "Guan Sheng Emperor",
+        "Thờ cúng": "Worship",
+        "Đền miếu": "Temple / Shrine",
+        "Linh thiêng": "Sacred",
+        "Quan Đế": "Guan Di",
+        "Lễ hội": "Festival",
+        "Thanh Long đao": "Green Dragon Blade",
+        "Yển Nguyệt đao": "Crescent Moon Blade",
+        "Xích Thố": "Red Hare",
+        "Phương Thiên": "Sky Piercer",
+        "Hồ Quảng": "Hu Guang",
+        "Tượng": "Statue",
+        "Phim": "Film",
+        "Sách": "Book",
+        "Game": "Game",
+    },
+    "zh": {
+        "Lưu Bị": "刘备",
+        "Trương Phi": "张飞",
+        "Tào Tháo": "曹操",
+        "Triệu Vân": "赵云",
+        "Gia Cát Lượng": "诸葛亮",
+        "Lữ Bố": "吕布",
+        "Điêu Thuyền": "貂蝉",
+        "Đổng Trác": "董卓",
+        "Tôn Quyền": "孙权",
+        "Chu Du": "周瑜",
+        "Viên Thiệu": "袁绍",
+        "Tư Mã Ý": "司马懿",
+        "Mã Siêu": "马超",
+        "Hoàng Trung": "黄忠",
+        "Lục Tốn": "陆逊",
+        "Hứa Chử": "许褚",
+        "Điển Vi": "典韦",
+        "Trương Liêu": "张辽",
+        "Bàng Thống": "庞统",
+        "Pháp Chính": "法正",
+        "Cam Ninh": "甘宁",
+        "Thái Sử Từ": "太史慈",
+        "Lã Mông": "吕蒙",
+        "Nhan Lương": "颜良",
+        "Văn Xú": "文丑",
+        "Hoa Hùng": "华雄",
+        "Hoa Đà": "华佗",
+        "Quan Bình": "关平",
+        "Quan Hưng": "关兴",
+        "Bàng Đức": "庞德",
+        "Ngụy Diên": "魏延",
+        "Tôn Kiên": "孙坚",
+        "Tôn Sách": "孙策",
+        "Tào Nhân": "曹仁",
+        "Tào Hồng": "曹洪",
+        "Hạ Hầu Đôn": "夏侯惇",
+        "Lý Túc": "李肃",
+        "Nezha": "哪吒",
+        "Kinh Châu": "荆州",
+        "Xích Bích": "赤壁",
+        "Mạch Thành": "麦城",
+        "Trường Bản": "长坂坡",
+        "Đào Viên": "桃园",
+        "Phượng Nghi Đình": "凤仪亭",
+        "Ngọa Long": "卧龙",
+        "Khổng Thành Kế": "空城计",
+        "Bạch Đế Thành": "白帝城",
+        "Hán Trung": "汉中",
+        "Ngũ Trượng Nguyên": "五丈原",
+        "Quan Độ": "官渡",
+        "Hoa Dung": "过五关斩六将",
+        "Thục Hán": "蜀汉",
+        "Ngụy Quốc": "魏国",
+        "Đông Ngô": "东吴",
+        "Tam quốc": "三国",
+        "Tam quốc diễn nghĩa": "三国演义",
+        "Ngũ hổ tướng": "五虎上将",
+        "Trung nghĩa": "忠义",
+        "Trung thành": "忠诚",
+        "Nhân nghĩa": "仁义",
+        "Nghĩa khí": "义气",
+        "Võ thánh": "武圣",
+        "Chiến thần": "战神",
+        "Kiêu ngạo": "傲慢",
+        "Lịch sử": "历史",
+        "Diễn nghĩa": "演义",
+        "Hào kiệt": "豪杰",
+        "Ngũ hổ": "五虎",
+        "Cải lương": "粤剧/戏曲",
+        "Quan Thánh Đế Quân": "关圣帝君",
+        "Thờ cúng": "祭祀",
+        "Đền miếu": "庙宇",
+        "Linh thiêng": "神圣",
+        "Quan Đế": "关帝",
+        "Lễ hội": "节庆",
+        "Thanh Long đao": "青龙偃月刀",
+        "Yển Nguyệt đao": "偃月刀",
+        "Xích Thố": "赤兔",
+        "Phương Thiên": "方天画戟",
+        "Hồ Quảng": "虎关",
+        "Tượng": "雕像",
+        "Phim": "影视",
+        "Sách": "书籍",
+        "Game": "游戏",
+    },
+}
+
+
+def google_keyword_label(canonical: str, locale: str) -> str:
+    if locale == "vi":
+        return canonical
+    return GOOGLE_TAMQUOC_LABELS.get(locale, {}).get(canonical, canonical)
+
+
+def google_category_label(category: str, locale: str) -> str:
+    return GOOGLE_CATEGORY_LABELS.get(locale, {}).get(category, category)
+
 ACCOUNT_TYPE_LABELS = {
     "vi": {
         "chinh_thong": "Tài khoản chính thống",
@@ -157,6 +372,36 @@ ACCOUNT_TYPE_LABELS = {
 ACCOUNT_TYPE_LEGACY = {
     "Tài khoản chính thống": "chinh_thong",
     "Tài khoản cá nhân": "ca_nhan",
+}
+
+CONTENT_TYPE_LABELS = {
+    "vi": {
+        "Sách": "Sách",
+        "Nghiên cứu": "Nghiên cứu",
+        "Báo cáo": "Báo cáo",
+        "Học thuật": "Học thuật",
+        "Giải trí": "Giải trí",
+        "Điện ảnh": "Điện ảnh",
+        "Khác": "Khác",
+    },
+    "en": {
+        "Sách": "Books",
+        "Nghiên cứu": "Research",
+        "Báo cáo": "Report",
+        "Học thuật": "Academic",
+        "Giải trí": "Entertainment",
+        "Điện ảnh": "Film",
+        "Khác": "Other",
+    },
+    "zh": {
+        "Sách": "书籍",
+        "Nghiên cứu": "研究",
+        "Báo cáo": "报告",
+        "Học thuật": "学术",
+        "Giải trí": "娱乐",
+        "Điện ảnh": "影视",
+        "Khác": "其他",
+    },
 }
 
 # ── CHART TEXT (titles, axis labels) ──────────────────────────────────────────
@@ -181,10 +426,10 @@ CHART_TEXT = {
         "google_content_types_title": "Phân loại nội dung Google (tổng hợp)",
         "google_content_types_xlabel": "Loại nội dung",
         "google_content_types_ylabel": "Số kết quả",
-        "google_year_trend_title": "Xu thế năm xuất hiện trong kết quả Google (1980–nay)",
+        "google_year_trend_title": "Xu thế năm xuất hiện trong kết quả Google (2000–nay)",
         "google_year_trend_xlabel": "Năm",
         "google_year_trend_ylabel": "Số lần xuất hiện",
-        "google_top_keywords_title": "Top 15 keyword liên quan trên Google",
+        "google_top_keywords_title": "Top 15 keyword Tam Quốc liên quan trên Google",
         "google_top_keywords_xlabel": "Keyword",
         "google_top_keywords_ylabel": "Tỷ lệ xuất hiện",
         # Step 10 — Sentiment & Personality
@@ -210,10 +455,10 @@ CHART_TEXT = {
         "google_content_types_title": "Google Content Type Classification (Summary)",
         "google_content_types_xlabel": "Content Type",
         "google_content_types_ylabel": "Number of Results",
-        "google_year_trend_title": "Year Trend in Google Results (1980–Present)",
+        "google_year_trend_title": "Year Trend in Google Results (2000–Present)",
         "google_year_trend_xlabel": "Year",
         "google_year_trend_ylabel": "Occurrences",
-        "google_top_keywords_title": "Top 15 Related Keywords on Google",
+        "google_top_keywords_title": "Top 15 Three Kingdoms Keywords on Google",
         "google_top_keywords_xlabel": "Keyword",
         "google_top_keywords_ylabel": "Occurrence Rate",
         "sentiment_title": "Comment Sentiment Distribution",
@@ -238,10 +483,10 @@ CHART_TEXT = {
         "google_content_types_title": "Google内容类型分类（汇总）",
         "google_content_types_xlabel": "内容类型",
         "google_content_types_ylabel": "结果数量",
-        "google_year_trend_title": "Google结果年份趋势（1980年至今）",
+        "google_year_trend_title": "Google结果年份趋势（2000年至今）",
         "google_year_trend_xlabel": "年份",
         "google_year_trend_ylabel": "出现次数",
-        "google_top_keywords_title": "Google相关关键词Top 15",
+        "google_top_keywords_title": "Google三国演义相关关键词Top 15",
         "google_top_keywords_xlabel": "关键词",
         "google_top_keywords_ylabel": "出现比率",
         "sentiment_title": "评论情感分布",
@@ -259,7 +504,7 @@ SUMMARY_TEXT = {
         "section_channels": "Thống kê kênh YouTube",
         "section_google_content": "Phân loại nội dung Google",
         "section_year_trend": "Xu thế theo năm",
-        "section_top_keywords": "Top 15 keyword Google",
+        "section_top_keywords": "Top 15 keyword Tam Quốc (Google)",
         "no_data": "Không có dữ liệu.",
         "col_ten_tai_khoan": "Tên tài khoản",
         "col_loai_tai_khoan": "Loại tài khoản",
@@ -272,6 +517,7 @@ SUMMARY_TEXT = {
         "col_nam": "Năm",
         "col_so_ket_qua": "Số kết quả",
         "col_ty_le_xuat_hien": "Tỷ lệ xuất hiện",
+        "col_category": "Phân loại",
     },
     "en": {
         "page_title": "Report — YouTube Channels & Google Survey",
@@ -279,7 +525,7 @@ SUMMARY_TEXT = {
         "section_channels": "YouTube Channel Statistics",
         "section_google_content": "Google Content Classification",
         "section_year_trend": "Year Trend",
-        "section_top_keywords": "Top 15 Google Keywords",
+        "section_top_keywords": "Top 15 Three Kingdoms Keywords (Google)",
         "no_data": "No data available.",
         "col_ten_tai_khoan": "Account Name",
         "col_loai_tai_khoan": "Account Type",
@@ -292,6 +538,7 @@ SUMMARY_TEXT = {
         "col_nam": "Year",
         "col_so_ket_qua": "Number of Results",
         "col_ty_le_xuat_hien": "Occurrence Rate",
+        "col_category": "Category",
     },
     "zh": {
         "page_title": "报告 — YouTube频道与Google调查",
@@ -299,7 +546,7 @@ SUMMARY_TEXT = {
         "section_channels": "YouTube频道统计",
         "section_google_content": "Google内容分类",
         "section_year_trend": "年份趋势",
-        "section_top_keywords": "Google关键词Top 15",
+        "section_top_keywords": "Google三国演义关键词Top 15",
         "no_data": "暂无数据。",
         "col_ten_tai_khoan": "账号名称",
         "col_loai_tai_khoan": "账号类型",
@@ -312,6 +559,7 @@ SUMMARY_TEXT = {
         "col_nam": "年份",
         "col_so_ket_qua": "结果数量",
         "col_ty_le_xuat_hien": "出现比率",
+        "col_category": "分类",
     },
 }
 
@@ -347,7 +595,7 @@ NARRATIVE_TEXT = {
         "trend_up": "tăng dần",
         "trend_down": "giảm dần",
         "trend_stable": "tương đối ổn định",
-        "keywords_para": "Các keyword liên quan nổi bật nhất gồm: {keyword_list}.",
+        "keywords_para": "Các keyword Tam Quốc nổi bật nhất trên Google gồm: {keyword_list}.",
         "keyword_item": "**{keyword}** ({rate})",
         "keyword_join": ", ",
     },
@@ -381,7 +629,7 @@ NARRATIVE_TEXT = {
         "trend_up": "increasing",
         "trend_down": "decreasing",
         "trend_stable": "relatively stable",
-        "keywords_para": "The most prominent related keywords include: {keyword_list}.",
+        "keywords_para": "The most prominent Three Kingdoms keywords on Google include: {keyword_list}.",
         "keyword_item": "**{keyword}** ({rate})",
         "keyword_join": ", ",
     },
@@ -414,7 +662,7 @@ NARRATIVE_TEXT = {
         "trend_up": "呈上升趋势",
         "trend_down": "呈下降趋势",
         "trend_stable": "相对稳定",
-        "keywords_para": "最相关的关键词包括：{keyword_list}。",
+        "keywords_para": "Google上最相关的三国演义关键词包括：{keyword_list}。",
         "keyword_item": "**{keyword}**（{rate}）",
         "keyword_join": "、",
     },
@@ -432,6 +680,11 @@ def account_type_label(slug_or_legacy: str, locale: str) -> str:
     return ACCOUNT_TYPE_LABELS[locale].get(slug, slug_or_legacy)
 
 
+def content_type_label(value: str, locale: str) -> str:
+    """Dịch loại nội dung Google (tiếng Việt canonical) sang locale."""
+    return CONTENT_TYPE_LABELS[locale].get(value, value)
+
+
 # ── FONT HELPER ───────────────────────────────────────────────────────────────
 # Danh sách font CJK phổ biến trên Windows
 _CJK_FONT_CANDIDATES = [
@@ -444,6 +697,38 @@ _CJK_FONT_CANDIDATES = [
 ]
 
 _zh_font_prop = None  # Cache
+_latin_font_prop = None  # Cache
+
+_LATIN_FONT_CANDIDATES = [
+    "Segoe UI",
+    "Arial",
+    "DejaVu Sans",
+]
+
+
+def get_latin_font():
+    """Font Latin có dấu tiếng Việt cho nhãn trục trên biểu đồ zh."""
+    global _latin_font_prop
+    if _latin_font_prop is not None:
+        return _latin_font_prop
+
+    available = {f.name for f in fm.fontManager.ttflist}
+    for candidate in _LATIN_FONT_CANDIDATES:
+        if candidate in available:
+            _latin_font_prop = fm.FontProperties(family=candidate)
+            return _latin_font_prop
+
+    _latin_font_prop = fm.FontProperties(family="DejaVu Sans")
+    return _latin_font_prop
+
+
+def apply_latin_xticklabels(ax, locale: str):
+    """Gán font Latin cho nhãn trục X khi locale zh hiển thị text tiếng Việt."""
+    if locale != "zh":
+        return
+    latin_font = get_latin_font()
+    for label in ax.get_xticklabels():
+        label.set_fontproperties(latin_font)
 
 
 def get_zh_font():
@@ -474,7 +759,7 @@ def apply_locale_font(locale: str):
         zh_font = get_zh_font()
         font_family = zh_font.get_name()
         plt.rcParams['font.family'] = 'sans-serif'
-        plt.rcParams['font.sans-serif'] = [font_family, 'DejaVu Sans']
+        plt.rcParams['font.sans-serif'] = [font_family, 'Segoe UI', 'DejaVu Sans']
         plt.rcParams['axes.unicode_minus'] = False
     else:
         # Reset về font mặc định cho vi/en
