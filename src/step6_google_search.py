@@ -8,19 +8,27 @@ Output:
   output/data/v6_google_content_types.csv
   output/data/v6_google_year_trend.csv
   output/data/v6_google_top_keywords.csv
+
+Chạy lại phân loại (không crawl):
+  python src/step6_google_search.py --reclassify-only
 """
 
+import argparse
 import io
 import re
 import sys
 from collections import Counter
 from datetime import datetime
-from urllib.parse import urlparse
 
 import pandas as pd
 from tqdm import tqdm
 
 from google_client import iter_google_search
+from google_content_classifier import (
+    _domain,
+    classify_content,
+    is_valid_result,
+)
 from paths import DATA_DIR, ensure_data_dir
 from tamquoc_keywords import (
     CANONICAL_TO_CATEGORY,
@@ -39,39 +47,13 @@ MIN_YEAR = 2000
 MAX_YEAR = datetime.now().year
 YEAR_RE = re.compile(r"\b(20[0-2]\d|2000)\b")
 
-CONTENT_TYPE_RULES = [
-    ("Sách", ["goodreads", "nxb", "sách", "book", "wikipedia.org/wiki/sách", "amazon.com"]),
-    ("Nghiên cứu", ["scholar.google", "researchgate", "academia.edu", ".edu/", "nghiên cứu"]),
-    ("Báo cáo", [".gov", "báo cáo", "report", "whitepaper"]),
-    ("Học thuật", ["doi.org", "journal", "tạp chí", "ieee.org", "springer.com"]),
-    ("Giải trí", ["youtube.com", "tiktok.com", "game", "facebook.com", "reddit.com"]),
-    ("Điện ảnh", ["imdb", "phim", "movie", "netflix", "letterboxd"]),
-]
-
-
-def _domain(url):
-    try:
-        host = urlparse(url).netloc.lower()
-        return host.removeprefix("www.")
-    except Exception:
-        return ""
-
-
-def classify_content(url, title, description):
-    blob = f"{url} {title} {description}".lower()
-    for label, signals in CONTENT_TYPE_RULES:
-        if any(sig in blob for sig in signals):
-            return label
-    return "Khác"
+RAW_COLUMNS = ["keyword", "title", "url", "description", "domain"]
 
 
 def extract_years(text):
     if not isinstance(text, str):
         return []
     return [int(y) for y in YEAR_RE.findall(text) if MIN_YEAR <= int(y) <= MAX_YEAR]
-
-
-RAW_COLUMNS = ["keyword", "title", "url", "description", "domain"]
 
 
 def crawl_google():
@@ -123,6 +105,22 @@ def filter_relevant(df_raw):
     return filtered
 
 
+def filter_valid(df_raw):
+    """Lọc kết quả SERP rác (title/URL không hợp lệ)."""
+    if df_raw.empty:
+        return df_raw
+    mask = df_raw.apply(
+        lambda r: is_valid_result(
+            r.get("url", ""), r.get("title", ""), r.get("description", "")
+        ),
+        axis=1,
+    )
+    filtered = df_raw[mask].reset_index(drop=True)
+    dropped = len(df_raw) - len(filtered)
+    print(f"[*] Lọc junk SERP: giữ {len(filtered)}/{len(df_raw)} (bỏ {dropped})")
+    return filtered
+
+
 def _write_empty_raw_diagnostic():
     raw_file = DATA_DIR / "v6_google_results_raw.csv"
     pd.DataFrame(columns=RAW_COLUMNS).to_csv(raw_file, index=False, encoding="utf-8-sig")
@@ -131,8 +129,17 @@ def _write_empty_raw_diagnostic():
 
 def build_content_types(df_raw):
     df = df_raw.copy()
+    if "domain" not in df.columns:
+        df["domain"] = df["url"].apply(_domain)
     df["content_type"] = df.apply(
-        lambda r: classify_content(r["url"], r["title"], r["description"]), axis=1
+        lambda r: classify_content(
+            r.get("url", ""),
+            r.get("title", ""),
+            r.get("description", ""),
+            r.get("domain", ""),
+            r.get("keyword", ""),
+        ),
+        axis=1,
     )
     df.to_csv(DATA_DIR / "v6_google_content_types.csv", index=False, encoding="utf-8-sig")
 
@@ -145,6 +152,13 @@ def build_content_types(df_raw):
     summary["ty_le_pct"] = summary.apply(
         lambda r: round(r["so_ket_qua"] / totals[r["keyword"]] * 100, 2), axis=1
     )
+
+    print("\n=== PHÂN LOẠI NỘI DUNG (tổng hợp) ===")
+    counts = df["content_type"].value_counts()
+    total = len(df) or 1
+    for ct, n in counts.items():
+        print(f"  {ct}: {n} ({round(n / total * 100, 1)}%)")
+
     return df, summary
 
 
@@ -202,6 +216,46 @@ def build_top_keywords(df_raw):
     return df
 
 
+def _process_pipeline(df_raw, write_raw=True):
+    """Lọc + phân loại + xuất CSV phụ."""
+    if write_raw:
+        raw_file = DATA_DIR / "v6_google_results_raw.csv"
+        df_raw.to_csv(raw_file, index=False, encoding="utf-8-sig")
+        print(f"\n[OK] {len(df_raw)} kết quả → {raw_file.name}")
+
+    _, summary = build_content_types(df_raw)
+    print("\n=== PHÂN LOẠI NỘI DUNG (theo keyword) ===")
+    print(summary.to_string(index=False))
+
+    build_year_trend(df_raw)
+    top_df = build_top_keywords(df_raw)
+    print("\n=== TOP 15 KEYWORD TAM QUỐC LIÊN QUAN ===")
+    print(top_df.to_string(index=False))
+    print("\n[OK] Hoàn tất step6 — xem output/data/v6_google_*.csv")
+
+
+def reclassify_only():
+    """Đọc raw CSV đã crawl, áp classifier mới, không search lại."""
+    ensure_data_dir()
+    raw_file = DATA_DIR / "v6_google_results_raw.csv"
+    if not raw_file.exists():
+        print(f"[!] Không tìm thấy {raw_file.name} — chạy crawl đầy đủ trước.")
+        sys.exit(1)
+
+    df_raw = pd.read_csv(raw_file, encoding="utf-8-sig")
+    if df_raw.empty:
+        print("[!] File raw rỗng.")
+        sys.exit(1)
+
+    print(f"[*] Reclassify từ {raw_file.name} ({len(df_raw)} hàng)")
+    df_raw = filter_valid(df_raw)
+    if df_raw.empty:
+        print("[!] Không còn kết quả sau lọc junk.")
+        sys.exit(1)
+
+    _process_pipeline(df_raw, write_raw=True)
+
+
 def main():
     ensure_data_dir()
     df_raw, per_keyword = crawl_google()
@@ -222,20 +276,24 @@ def main():
         _write_empty_raw_diagnostic()
         sys.exit(1)
 
-    raw_file = DATA_DIR / "v6_google_results_raw.csv"
-    df_raw.to_csv(raw_file, index=False, encoding="utf-8-sig")
-    print(f"\n[OK] {len(df_raw)} kết quả → {raw_file.name}")
+    df_raw = filter_valid(df_raw)
+    if df_raw.empty:
+        print("[!] Không còn kết quả sau lọc junk.")
+        _write_empty_raw_diagnostic()
+        sys.exit(1)
 
-    _, summary = build_content_types(df_raw)
-    print("\n=== PHÂN LOẠI NỘI DUNG (theo keyword) ===")
-    print(summary.to_string(index=False))
-
-    build_year_trend(df_raw)
-    top_df = build_top_keywords(df_raw)
-    print("\n=== TOP 15 KEYWORD TAM QUỐC LIÊN QUAN ===")
-    print(top_df.to_string(index=False))
-    print("\n[OK] Hoàn tất step6 — xem output/data/v6_google_*.csv")
+    _process_pipeline(df_raw, write_raw=True)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Step 6 — khảo sát web search Tam quốc")
+    parser.add_argument(
+        "--reclassify-only",
+        action="store_true",
+        help="Phân loại lại từ v6_google_results_raw.csv (không crawl)",
+    )
+    args = parser.parse_args()
+    if args.reclassify_only:
+        reclassify_only()
+    else:
+        main()
