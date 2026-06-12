@@ -5,11 +5,34 @@ Mỗi entry: canonical (nhãn VI), category, patterns (vi/en/zh, lowercase khi m
 
 from __future__ import annotations
 
+# 5 keyword cốt lõi cần search theo spec V6 (Quan Vũ / Quan Công).
+QUAN_CORE_SEARCH_KEYWORDS: list[str] = [
+    "Quan Vũ",
+    "Quan Công",
+    "Quan Thánh",
+    "Quan Thánh Đế Quân",
+    "Quan Vân Trường",
+]
+
 # Seed keywords tìm kiếm gốc — loại khỏi top list vì đã là query chính.
 SEED_CANONICALS = {
-    "Quan Công", "Quan Vũ", "Quan Thánh", "Quan Thánh Đế Quân", "Quan Vân Trường",
+    *QUAN_CORE_SEARCH_KEYWORDS,
     "Tam quốc", "Tam quốc diễn nghĩa",
 }
+
+# Canonical / category liên quan trực tiếp Quan Vũ–Quan Công (dùng lọc top keyword).
+QUAN_RELATED_CATEGORIES = frozenset({
+    "tín_ngưỡng", "vũ_khí_biểu_tượng",
+})
+
+QUAN_RELATED_CANONICALS = frozenset({
+    "Quan Bình", "Quan Hưng",
+    "Mạch Thành", "Kinh Châu", "Trường Bản", "Xích Bích", "Đào Viên",
+    "Thanh Long đao", "Yển Nguyệt đao", "Xích Thố", "Tượng",
+    "Trung nghĩa", "Trung thành", "Nghĩa khí", "Võ thánh", "Chiến thần",
+    "Ngũ hổ tướng", "Ngũ hổ", "Thờ cúng", "Đền miếu", "Linh thiêng", "Quan Đế",
+    "Lễ hội", "Cải lương",
+})
 
 # Anchor Tam quốc — mỗi query search phải chứa ít nhất một anchor.
 TAMQUOC_ANCHORS = (
@@ -55,6 +78,11 @@ GOOGLE_SEARCH_QUERIES: list[str] = [
 
 # (canonical, category, patterns)
 _RAW_ENTRIES: list[tuple[str, str, list[str]]] = [
+    # ── nhân_vật (Quan Vũ / Quan Công — ưu tiên match) ──
+    ("Quan Vũ", "nhân_vật", ["quan vũ", "guan yu", "关羽", "关云长"]),
+    ("Quan Công", "nhân_vật", ["quan công", "quan cong"]),
+    ("Quan Thánh", "nhân_vật", ["quan thánh"]),
+    ("Quan Vân Trường", "nhân_vật", ["quan vân trường", "guan yunchang", "关云长"]),
     # ── nhân_vật ──
     ("Lưu Bị", "nhân_vật", ["lưu bị", "liu bei", "刘备", "liú bèi"]),
     ("Trương Phi", "nhân_vật", ["trương phi", "zhang fei", "张飞"]),
@@ -182,6 +210,21 @@ def match_tamquoc_keywords(text: str) -> list[str]:
 
 def is_seed_keyword(canonical: str) -> bool:
     return canonical in SEED_CANONICALS
+
+
+def is_quan_related(canonical: str) -> bool:
+    """Keyword lexicon có liên quan trực tiếp Quan Vũ / Quan Công."""
+    if canonical in QUAN_CORE_SEARCH_KEYWORDS or canonical in QUAN_RELATED_CANONICALS:
+        return True
+    if canonical.startswith("Quan "):
+        return True
+    return CANONICAL_TO_CATEGORY.get(canonical) in QUAN_RELATED_CATEGORIES
+
+
+def query_is_quan_focused(query: str) -> bool:
+    """Query search tập trung Quan (dùng trọng số khi đếm top keyword)."""
+    q = query.lower()
+    return any(x in q for x in ("quan", "guan", "关", "thờ quan"))
 
 
 def query_has_tamquoc_anchor(query: str) -> bool:
