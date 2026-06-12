@@ -7,7 +7,8 @@ Output:
   output/data/v6_google_results_raw.csv
   output/data/v6_google_content_types.csv
   output/data/v6_google_year_trend.csv
-  output/data/v6_google_top_keywords.csv
+  output/data/v6_google_top_keywords.csv          — top 5 keyword Quan Vũ/Quan Công từ SERP
+  output/data/v6_google_quan_search_queries.csv — 5 keyword cốt lõi cần search (spec V6)
 
 Chạy lại phân loại (không crawl):
   python src/step6_google_search.py --reclassify-only
@@ -33,16 +34,19 @@ from paths import DATA_DIR, ensure_data_dir
 from tamquoc_keywords import (
     CANONICAL_TO_CATEGORY,
     GOOGLE_SEARCH_QUERIES,
+    QUAN_CORE_SEARCH_KEYWORDS,
+    is_quan_related,
     is_result_relevant,
     is_seed_keyword,
     match_tamquoc_keywords,
+    query_is_quan_focused,
 )
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 GOOGLE_NUM_RESULTS = 50
-TOP_KEYWORDS = 15
+TOP_KEYWORDS = 5
 MIN_YEAR = 2000
 MAX_YEAR = datetime.now().year
 YEAR_RE = re.compile(r"\b(20[0-2]\d|2000)\b")
@@ -184,14 +188,36 @@ def build_year_trend(df_raw):
     return df
 
 
+def build_quan_search_queries():
+    """Ghi 5 keyword cốt lõi Quan Vũ/Quan Công cần search (spec V6)."""
+    rows = [
+        {
+            "stt": i,
+            "keyword": kw,
+            "category": CANONICAL_TO_CATEGORY.get(kw, "nhân_vật"),
+            "ghi_chu": "keyword cốt lõi — search trực tiếp",
+        }
+        for i, kw in enumerate(QUAN_CORE_SEARCH_KEYWORDS, 1)
+    ]
+    df = pd.DataFrame(rows)
+    df.to_csv(DATA_DIR / "v6_google_quan_search_queries.csv", index=False, encoding="utf-8-sig")
+    return df
+
+
 def build_top_keywords(df_raw):
+    """Top 5 keyword Quan Vũ/Quan Công xuất hiện nhiều nhất trong SERP (trọng số query Quan x2)."""
     counter = Counter()
+    quan_rows = 0
     for _, row in df_raw.iterrows():
+        query = row.get("keyword", "")
+        weight = 2 if query_is_quan_focused(query) else 1
+        if weight > 1:
+            quan_rows += 1
         text = f"{row.get('title', '')} {row.get('description', '')}"
         for canonical in match_tamquoc_keywords(text):
-            if is_seed_keyword(canonical):
+            if is_seed_keyword(canonical) or not is_quan_related(canonical):
                 continue
-            counter[canonical] += 1
+            counter[canonical] += weight
 
     total_rows = len(df_raw) or 1
     top = counter.most_common(TOP_KEYWORDS)
@@ -207,11 +233,14 @@ def build_top_keywords(df_raw):
     df = pd.DataFrame(rows)
     df.to_csv(DATA_DIR / "v6_google_top_keywords.csv", index=False, encoding="utf-8-sig")
 
-    if not df.empty and "category" in df.columns:
+    if df.empty:
+        print("[!] Không đủ keyword Quan Vũ/Quan Công trong SERP — dùng danh sách cốt lõi.")
+    else:
         by_cat = df.groupby("category").size()
-        print("\n=== PHÂN LOẠI TOP KEYWORD (theo category) ===")
+        print("\n=== PHÂN LOẠI TOP KEYWORD QUAN (theo category) ===")
         for cat, n in by_cat.items():
             print(f"  {cat}: {n}")
+    print(f"[*] Trọng số: {quan_rows}/{total_rows} kết quả từ query tập trung Quan (x2)")
 
     return df
 
@@ -228,9 +257,17 @@ def _process_pipeline(df_raw, write_raw=True):
     print(summary.to_string(index=False))
 
     build_year_trend(df_raw)
+    core_df = build_quan_search_queries()
     top_df = build_top_keywords(df_raw)
-    print("\n=== TOP 15 KEYWORD TAM QUỐC LIÊN QUAN ===")
-    print(top_df.to_string(index=False))
+
+    print("\n=== 5 KEYWORD CỐT LÕI CẦN SEARCH (Quan Vũ / Quan Công) ===")
+    print(core_df[["stt", "keyword", "category"]].to_string(index=False))
+
+    print("\n=== TOP 5 KEYWORD QUAN VŨ / QUAN CÔNG TỪ SERP ===")
+    if top_df.empty:
+        print("  (chưa có — chạy crawl đầy đủ hoặc xem v6_google_quan_search_queries.csv)")
+    else:
+        print(top_df.to_string(index=False))
     print("\n[OK] Hoàn tất step6 — xem output/data/v6_google_*.csv")
 
 
