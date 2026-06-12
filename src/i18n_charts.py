@@ -440,6 +440,13 @@ CONTENT_TYPE_LABELS = {
     },
 }
 
+_CANONICAL_CONTENT_TYPES = list(CONTENT_TYPE_LABELS["vi"].keys())
+_TAB20_COLORS = plt.cm.tab20.colors
+CONTENT_TYPE_COLORS = {
+    ct: _TAB20_COLORS[i % len(_TAB20_COLORS)]
+    for i, ct in enumerate(_CANONICAL_CONTENT_TYPES)
+}
+
 # ── CHART TEXT (titles, axis labels) ──────────────────────────────────────────
 CHART_TEXT = {
     "vi": {
@@ -468,6 +475,12 @@ CHART_TEXT = {
         "google_top_keywords_title": "Top 5 keyword Quan Vũ / Quan Công trên Google",
         "google_top_keywords_xlabel": "Keyword",
         "google_top_keywords_ylabel": "Tỷ lệ xuất hiện",
+        "google_keyword_content_types_title": "Phân loại nội dung theo keyword cốt lõi Quan (%)",
+        "google_keyword_content_types_xlabel": "Keyword cốt lõi",
+        "google_keyword_content_types_ylabel": "Số kết quả",
+        "google_year_content_trend_title": "Xu thế năm × loại nội dung Google (2000–nay)",
+        "google_year_content_trend_xlabel": "Năm",
+        "google_year_content_trend_ylabel": "Số lần xuất hiện",
         # Step 10 — Sentiment & Personality
         "sentiment_title": "Phân bố Cảm xúc Bình luận (Sentiment)",
         "personality_title": "Mức độ phổ biến của các tính cách mô tả Quan Vũ",
@@ -497,6 +510,12 @@ CHART_TEXT = {
         "google_top_keywords_title": "Top 5 Guan Yu / Guan Gong Keywords on Google",
         "google_top_keywords_xlabel": "Keyword",
         "google_top_keywords_ylabel": "Occurrence Rate",
+        "google_keyword_content_types_title": "Content Types by Core Guan Keywords (%)",
+        "google_keyword_content_types_xlabel": "Core Keyword",
+        "google_keyword_content_types_ylabel": "Number of Results",
+        "google_year_content_trend_title": "Year × Content Type Trend on Google (2000–Present)",
+        "google_year_content_trend_xlabel": "Year",
+        "google_year_content_trend_ylabel": "Occurrences",
         "sentiment_title": "Comment Sentiment Distribution",
         "personality_title": "Popularity of Personality Traits Describing Guan Yu",
         "personality_xlabel": "Occurrences",
@@ -525,6 +544,12 @@ CHART_TEXT = {
         "google_top_keywords_title": "Google关羽/关公相关关键词Top 5",
         "google_top_keywords_xlabel": "关键词",
         "google_top_keywords_ylabel": "出现比率",
+        "google_keyword_content_types_title": "核心关羽关键词内容类型分类（%）",
+        "google_keyword_content_types_xlabel": "核心关键词",
+        "google_keyword_content_types_ylabel": "结果数量",
+        "google_year_content_trend_title": "Google年份×内容类型趋势（2000年至今）",
+        "google_year_content_trend_xlabel": "年份",
+        "google_year_content_trend_ylabel": "出现次数",
         "sentiment_title": "评论情感分布",
         "personality_title": "描述关羽的性格特征的流行度",
         "personality_xlabel": "出现次数",
@@ -541,7 +566,10 @@ SUMMARY_TEXT = {
         "section_google_content": "Phân loại nội dung Google",
         "section_year_trend": "Xu thế theo năm",
         "section_top_keywords": "Top 5 keyword Quan Vũ / Quan Công (Google)",
+        "section_v7_keyword_content": "Phân loại nội dung theo keyword cốt lõi",
+        "section_v7_year_content": "Xu thế năm × loại nội dung",
         "no_data": "Không có dữ liệu.",
+        "col_core_keyword": "Keyword cốt lõi",
         "col_ten_tai_khoan": "Tên tài khoản",
         "col_loai_tai_khoan": "Loại tài khoản",
         "col_so_luong_video": "Số lượng video",
@@ -562,7 +590,10 @@ SUMMARY_TEXT = {
         "section_google_content": "Google Content Classification",
         "section_year_trend": "Year Trend",
         "section_top_keywords": "Top 5 Guan Yu / Guan Gong Keywords (Google)",
+        "section_v7_keyword_content": "Content Types by Core Keywords",
+        "section_v7_year_content": "Year × Content Type Trend",
         "no_data": "No data available.",
+        "col_core_keyword": "Core Keyword",
         "col_ten_tai_khoan": "Account Name",
         "col_loai_tai_khoan": "Account Type",
         "col_so_luong_video": "Number of Videos",
@@ -583,7 +614,10 @@ SUMMARY_TEXT = {
         "section_google_content": "Google内容分类",
         "section_year_trend": "年份趋势",
         "section_top_keywords": "Google关羽/关公关键词Top 5",
+        "section_v7_keyword_content": "核心关键词内容类型分类",
+        "section_v7_year_content": "年份×内容类型趋势",
         "no_data": "暂无数据。",
+        "col_core_keyword": "核心关键词",
         "col_ten_tai_khoan": "账号名称",
         "col_loai_tai_khoan": "账号类型",
         "col_so_luong_video": "视频数量",
@@ -634,6 +668,16 @@ NARRATIVE_TEXT = {
         "keywords_para": "Các keyword Tam Quốc nổi bật nhất trên Google gồm: {keyword_list}.",
         "keyword_item": "**{keyword}** ({rate})",
         "keyword_join": ", ",
+        "v7_keyword_para": (
+            "Đối với **{core_keyword}**, loại nội dung chiếm ưu thế là "
+            "**{top_type}** ({top_pct}%), tiếp theo là {other_types}."
+        ),
+        "v7_other_type_item": "**{type}** ({pct}%)",
+        "v7_other_type_join": ", ",
+        "v7_year_para": (
+            "Trong khoảng {year_from}–{year_to}, năm **{peak_year}** có nhiều kết quả nhất "
+            "({peak_count} lần); loại nội dung nổi bật là **{peak_type}**."
+        ),
     },
     "en": {
         "intro": (
@@ -668,6 +712,16 @@ NARRATIVE_TEXT = {
         "keywords_para": "The most prominent Three Kingdoms keywords on Google include: {keyword_list}.",
         "keyword_item": "**{keyword}** ({rate})",
         "keyword_join": ", ",
+        "v7_keyword_para": (
+            "For **{core_keyword}**, the dominant content type is "
+            "**{top_type}** ({top_pct}%), followed by {other_types}."
+        ),
+        "v7_other_type_item": "**{type}** ({pct}%)",
+        "v7_other_type_join": ", ",
+        "v7_year_para": (
+            "Between {year_from} and {year_to}, **{peak_year}** had the most results "
+            "({peak_count} occurrences); leading content type: **{peak_type}**."
+        ),
     },
     "zh": {
         "intro": (
@@ -701,6 +755,16 @@ NARRATIVE_TEXT = {
         "keywords_para": "Google上最相关的三国演义关键词包括：{keyword_list}。",
         "keyword_item": "**{keyword}**（{rate}）",
         "keyword_join": "、",
+        "v7_keyword_para": (
+            "对于**{core_keyword}**，占比最高的内容类型为"
+            "**{top_type}**（{top_pct}%），其次为{other_types}。"
+        ),
+        "v7_other_type_item": "**{type}**（{pct}%）",
+        "v7_other_type_join": "、",
+        "v7_year_para": (
+            "在{year_from}年至{year_to}年间，**{peak_year}**年结果最多"
+            "（{peak_count}次）；主要内容为**{peak_type}**。"
+        ),
     },
 }
 
@@ -719,6 +783,11 @@ def account_type_label(slug_or_legacy: str, locale: str) -> str:
 def content_type_label(value: str, locale: str) -> str:
     """Dịch loại nội dung Google (tiếng Việt canonical) sang locale."""
     return CONTENT_TYPE_LABELS[locale].get(value, value)
+
+
+def content_type_color(content_type: str):
+    """Màu cố định theo loại nội dung canonical (dùng chung nhiều pie chart)."""
+    return CONTENT_TYPE_COLORS.get(content_type, CONTENT_TYPE_COLORS["Khác"])
 
 
 # ── FONT HELPER ───────────────────────────────────────────────────────────────

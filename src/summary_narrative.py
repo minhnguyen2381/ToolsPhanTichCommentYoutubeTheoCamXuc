@@ -16,8 +16,8 @@ from i18n_charts import (
 
 _COL_RENAME_KEYS = (
     "ten_tai_khoan", "loai_tai_khoan", "so_luong_video", "ty_le_pct",
-    "keyword", "content_type", "title", "url", "nam", "so_ket_qua", "ty_le_xuat_hien",
-    "category",
+    "keyword", "core_keyword", "content_type", "title", "url", "nam", "so_ket_qua",
+    "ty_le_xuat_hien", "category",
 )
 
 
@@ -35,6 +35,10 @@ def rename_summary_columns(df, locale):
         out["keyword"] = out["keyword"].apply(
             lambda k: google_keyword_label(k, locale)
         )
+    if "core_keyword" in out.columns:
+        out["core_keyword"] = out["core_keyword"].apply(
+            lambda k: google_keyword_label(k, locale)
+        )
     if "category" in out.columns:
         out["category"] = out["category"].apply(
             lambda c: google_category_label(c, locale)
@@ -46,8 +50,11 @@ def rename_summary_columns(df, locale):
     return out.rename(columns=rename)
 
 
-def build_summary_tables(df_ch, df_ct, df_yr, df_kw, locale):
+def build_summary_tables(df_ch, df_ct, df_yr, df_kw, locale, df_v7_kw=None, df_v7_yr=None):
     st = SUMMARY_TEXT[locale]
+    df_v7_kw = df_v7_kw if df_v7_kw is not None else pd.DataFrame()
+    df_v7_yr = df_v7_yr if df_v7_yr is not None else pd.DataFrame()
+
     ch_display = (
         df_ch[["ten_tai_khoan", "loai_tai_khoan", "so_luong_video", "ty_le_pct"]]
         if not df_ch.empty else df_ch
@@ -58,11 +65,25 @@ def build_summary_tables(df_ch, df_ct, df_yr, df_kw, locale):
         ct_display = df_ct.head(50)
     else:
         ct_display = df_ct
+
+    v7_kw_display = (
+        df_v7_kw[["core_keyword", "content_type", "so_ket_qua", "ty_le_pct"]]
+        if not df_v7_kw.empty and "core_keyword" in df_v7_kw.columns
+        else df_v7_kw
+    )
+    v7_yr_display = (
+        df_v7_yr[["nam", "content_type", "so_ket_qua", "ty_le_pct"]]
+        if not df_v7_yr.empty and "nam" in df_v7_yr.columns
+        else df_v7_yr
+    )
+
     return [
         (st["section_channels"], ch_display),
         (st["section_google_content"], ct_display),
         (st["section_year_trend"], df_yr),
         (st["section_top_keywords"], df_kw),
+        (st["section_v7_keyword_content"], v7_kw_display),
+        (st["section_v7_year_content"], v7_yr_display),
     ]
 
 
@@ -87,7 +108,9 @@ def _df_to_markdown_table(df):
     return "\n".join([headers, sep, *rows])
 
 
-def _compute_summary_metrics(df_ch, df_ct, df_yr, df_kw, locale):
+def _compute_summary_metrics(df_ch, df_ct, df_yr, df_kw, locale, df_v7_kw=None, df_v7_yr=None):
+    df_v7_kw = df_v7_kw if df_v7_kw is not None else pd.DataFrame()
+    df_v7_yr = df_v7_yr if df_v7_yr is not None else pd.DataFrame()
     metrics = {}
 
     if not df_ch.empty:
@@ -174,6 +197,44 @@ def _compute_summary_metrics(df_ch, df_ct, df_yr, df_kw, locale):
     else:
         metrics["has_keywords"] = False
 
+    if not df_v7_kw.empty and "core_keyword" in df_v7_kw.columns:
+        metrics["has_v7_keyword"] = True
+        top_core = (
+            df_v7_kw.groupby("core_keyword")["so_ket_qua"]
+            .sum()
+            .idxmax()
+        )
+        sub = df_v7_kw[df_v7_kw["core_keyword"] == top_core].sort_values(
+            "so_ket_qua", ascending=False,
+        )
+        top_row = sub.iloc[0]
+        metrics["v7_core_keyword"] = google_keyword_label(top_core, locale)
+        metrics["v7_top_type"] = content_type_label(top_row["content_type"], locale)
+        metrics["v7_top_pct"] = _fmt_pct(top_row["ty_le_pct"])
+        others = [
+            {
+                "type": content_type_label(r["content_type"], locale),
+                "pct": _fmt_pct(r["ty_le_pct"]),
+            }
+            for _, r in sub.iloc[1:3].iterrows()
+        ]
+        metrics["v7_other_types"] = others
+    else:
+        metrics["has_v7_keyword"] = False
+
+    if not df_v7_yr.empty and "nam" in df_v7_yr.columns:
+        metrics["has_v7_year"] = True
+        by_year = df_v7_yr.groupby("nam")["so_ket_qua"].sum()
+        peak_year = int(by_year.idxmax())
+        metrics["v7_year_from"] = int(df_v7_yr["nam"].min())
+        metrics["v7_year_to"] = int(df_v7_yr["nam"].max())
+        metrics["v7_peak_year"] = peak_year
+        metrics["v7_peak_count"] = fmt_dot(by_year.max())
+        peak_type_row = df_v7_yr.loc[df_v7_yr["so_ket_qua"].idxmax()]
+        metrics["v7_peak_type"] = content_type_label(peak_type_row["content_type"], locale)
+    else:
+        metrics["has_v7_year"] = False
+
     return metrics
 
 
@@ -188,11 +249,17 @@ def _section_with_table(title, paragraph, df, locale, nt, st):
     return parts
 
 
-def generate_summary_markdown(df_ch, df_ct, df_yr, df_kw, locale):
+def generate_summary_markdown(
+    df_ch, df_ct, df_yr, df_kw, locale, df_v7_kw=None, df_v7_yr=None,
+):
     st = SUMMARY_TEXT[locale]
     nt = NARRATIVE_TEXT[locale]
-    metrics = _compute_summary_metrics(df_ch, df_ct, df_yr, df_kw, locale)
-    tables = build_summary_tables(df_ch, df_ct, df_yr, df_kw, locale)
+    metrics = _compute_summary_metrics(
+        df_ch, df_ct, df_yr, df_kw, locale, df_v7_kw, df_v7_yr,
+    )
+    tables = build_summary_tables(
+        df_ch, df_ct, df_yr, df_kw, locale, df_v7_kw, df_v7_yr,
+    )
 
     parts = [f"# {st['page_heading']}", "", nt["intro"], ""]
 
@@ -264,15 +331,51 @@ def generate_summary_markdown(df_ch, df_ct, df_yr, df_kw, locale):
     else:
         keywords_para = None
 
-    narratives = [channels_para, content_para, year_para, keywords_para]
+    if metrics.get("has_v7_keyword"):
+        other_types = _join_items(
+            [
+                nt["v7_other_type_item"].format(type=item["type"], pct=item["pct"])
+                for item in metrics.get("v7_other_types", [])
+            ],
+            "v7_other_type_join",
+            nt,
+        ) or nt.get("no_data", "—")
+        v7_keyword_para = nt["v7_keyword_para"].format(
+            core_keyword=metrics["v7_core_keyword"],
+            top_type=metrics["v7_top_type"],
+            top_pct=metrics["v7_top_pct"],
+            other_types=other_types,
+        )
+    else:
+        v7_keyword_para = None
+
+    if metrics.get("has_v7_year"):
+        v7_year_para = nt["v7_year_para"].format(
+            year_from=metrics["v7_year_from"],
+            year_to=metrics["v7_year_to"],
+            peak_year=metrics["v7_peak_year"],
+            peak_count=metrics["v7_peak_count"],
+            peak_type=metrics["v7_peak_type"],
+        )
+    else:
+        v7_year_para = None
+
+    narratives = [
+        channels_para, content_para, year_para, keywords_para,
+        v7_keyword_para, v7_year_para,
+    ]
     for (title, df), paragraph in zip(tables, narratives):
         parts.extend(_section_with_table(title, paragraph, df, locale, nt, st))
 
     return "\n".join(parts).rstrip() + "\n"
 
 
-def write_summary_markdown(df_ch, df_ct, df_yr, df_kw, locale, out_path):
-    content = generate_summary_markdown(df_ch, df_ct, df_yr, df_kw, locale)
+def write_summary_markdown(
+    df_ch, df_ct, df_yr, df_kw, locale, out_path, df_v7_kw=None, df_v7_yr=None,
+):
+    content = generate_summary_markdown(
+        df_ch, df_ct, df_yr, df_kw, locale, df_v7_kw, df_v7_yr,
+    )
     out_path = Path(out_path)
     out_path.write_text(content, encoding="utf-8")
     print(f"[OK] [{locale}] {out_path}")
