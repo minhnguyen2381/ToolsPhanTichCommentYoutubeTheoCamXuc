@@ -5,7 +5,7 @@ Mỗi entry: canonical (nhãn VI), category, patterns (vi/en/zh, lowercase khi m
 
 from __future__ import annotations
 
-# 5 keyword cốt lõi cần search theo spec V6 (Quan Vũ / Quan Công).
+# 5 keyword cốt lõi cần search theo spec V6/V7 (Quan Vũ / Quan Công).
 QUAN_CORE_SEARCH_KEYWORDS: list[str] = [
     "Quan Vũ",
     "Quan Công",
@@ -13,6 +13,18 @@ QUAN_CORE_SEARCH_KEYWORDS: list[str] = [
     "Quan Thánh Đế Quân",
     "Quan Vân Trường",
 ]
+
+# Query ghép Tam quốc cho từng keyword cốt lõi (V7 crawl + map SERP).
+QUAN_CORE_SEARCH_QUERIES: dict[str, str] = {
+    "Quan Vũ": "Quan Vũ Tam quốc",
+    "Quan Công": "Quan Công Tam quốc diễn nghĩa",
+    "Quan Thánh": "Quan Thánh Tam quốc",
+    "Quan Thánh Đế Quân": "Quan Thánh Đế Quân Tam quốc",
+    "Quan Vân Trường": "Quan Vân Trường Tam quốc",
+}
+
+# Reverse lookup: query search → core keyword
+_QUERY_TO_CORE: dict[str, str] = {v: k for k, v in QUAN_CORE_SEARCH_QUERIES.items()}
 
 # Seed keywords tìm kiếm gốc — loại khỏi top list vì đã là query chính.
 SEED_CANONICALS = {
@@ -239,3 +251,37 @@ def is_result_relevant(title: str, description: str, query: str) -> bool:
     if match_tamquoc_keywords(text):
         return True
     return query_has_tamquoc_anchor(query)
+
+
+def resolve_core_keyword(search_query: str) -> str | None:
+    """Map query SERP về 1 trong 5 keyword cốt lõi Quan."""
+    if not isinstance(search_query, str) or not search_query.strip():
+        return None
+    q = search_query.strip()
+    if q in _QUERY_TO_CORE:
+        return _QUERY_TO_CORE[q]
+    ql = q.lower()
+    # Heuristic: query chứa cụm đặc trưng (ưu tiên dài trước)
+    patterns: list[tuple[str, str]] = [
+        ("quan thánh đế quân", "Quan Thánh Đế Quân"),
+        ("quan vân trường", "Quan Vân Trường"),
+        ("quan thánh", "Quan Thánh"),
+        ("quan công", "Quan Công"),
+        ("quan vũ", "Quan Vũ"),
+        ("thờ quan công", "Quan Công"),
+        ("tho quan cong", "Quan Công"),
+        ("guan yu", "Quan Vũ"),
+        ("guan yunchang", "Quan Vân Trường"),
+        ("关圣帝君", "Quan Thánh Đế Quân"),
+        ("关云长", "Quan Vân Trường"),
+        ("关羽", "Quan Vũ"),
+    ]
+    for pat, core in patterns:
+        if pat in ql:
+            return core
+    return None
+
+
+def core_search_query_list() -> list[str]:
+    """Danh sách query crawl cho 5 keyword cốt lõi."""
+    return list(QUAN_CORE_SEARCH_QUERIES.values())
