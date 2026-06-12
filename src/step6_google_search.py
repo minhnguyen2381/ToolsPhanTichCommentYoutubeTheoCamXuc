@@ -1,17 +1,23 @@
-"""BƯỚC 6 (V6): Khảo sát keyword Tam quốc trên web search (Bing/Brave qua ddgs).
+"""BƯỚC 6 (V6/V7): Khảo sát keyword Tam quốc trên web search (Bing/Brave qua ddgs).
 
 Google scrape trực tiếp thường bị chặn; pipeline dùng ddgs thay thế.
 Query ghép — mỗi query gắn anchor Tam quốc (xem tamquoc_keywords.GOOGLE_SEARCH_QUERIES).
 
-Output:
+Output V6:
   output/data/v6_google_results_raw.csv
   output/data/v6_google_content_types.csv
   output/data/v6_google_year_trend.csv
-  output/data/v6_google_top_keywords.csv          — top 5 keyword Quan Vũ/Quan Công từ SERP
-  output/data/v6_google_quan_search_queries.csv — 5 keyword cốt lõi cần search (spec V6)
+  output/data/v6_google_top_keywords.csv
+  output/data/v6_google_quan_search_queries.csv
+
+Output V7 (5 keyword cốt lõi Quan):
+  output/data/v7_google_keyword_content_types.csv
+  output/data/v7_google_year_content_trend.csv
+  output/data/v7_google_results_enriched.csv
 
 Chạy lại phân loại (không crawl):
   python src/step6_google_search.py --reclassify-only
+  python src/step6_google_search.py --v7-only
 """
 
 import argparse
@@ -30,16 +36,19 @@ from google_content_classifier import (
     classify_content,
     is_valid_result,
 )
+from google_v7_analytics import write_v7_outputs
 from paths import DATA_DIR, ensure_data_dir
 from tamquoc_keywords import (
     CANONICAL_TO_CATEGORY,
     GOOGLE_SEARCH_QUERIES,
     QUAN_CORE_SEARCH_KEYWORDS,
+    core_search_query_list,
     is_quan_related,
     is_result_relevant,
     is_seed_keyword,
     match_tamquoc_keywords,
     query_is_quan_focused,
+    resolve_core_keyword,
 )
 
 if sys.stdout.encoding != "utf-8":
@@ -52,6 +61,7 @@ MAX_YEAR = datetime.now().year
 YEAR_RE = re.compile(r"\b(20[0-2]\d|2000)\b")
 
 RAW_COLUMNS = ["keyword", "title", "url", "description", "domain"]
+RAW_FILE = DATA_DIR / "v6_google_results_raw.csv"
 
 
 def extract_years(text):
@@ -60,13 +70,13 @@ def extract_years(text):
     return [int(y) for y in YEAR_RE.findall(text) if MIN_YEAR <= int(y) <= MAX_YEAR]
 
 
-def crawl_google():
+def _crawl_queries(queries: list[str], label: str = "Web search"):
     rows = []
     seen_urls: set[str] = set()
     per_keyword = {}
-    for kw in GOOGLE_SEARCH_QUERIES:
+    for kw in queries:
         print(f"\n{'='*60}")
-        print(f"[*] Web search: {kw} (max {GOOGLE_NUM_RESULTS})")
+        print(f"[*] {label}: {kw} (max {GOOGLE_NUM_RESULTS})")
         print(f"{'='*60}")
         added = 0
         try:
@@ -90,7 +100,76 @@ def crawl_google():
             print(f"[!] Lỗi search '{kw}': {str(e)[:120]}")
         per_keyword[kw] = added
         print(f"[*] '{kw}': {added} kết quả mới (dedupe URL)")
+    return pd.DataFrame(rows), per_keyword, seen_urls
+
+
+def crawl_google():
+    return _crawl_queries(GOOGLE_SEARCH_QUERIES, "Web search")
+
+
+def crawl_core_queries(seen_urls: set[str] | None = None):
+    """Crawl 5 query cốt lõi Quan (V7)."""
+    seen = seen_urls if seen_urls is not None else set()
+    rows = []
+    per_keyword = {}
+    for kw in core_search_query_list():
+        print(f"\n{'='*60}")
+        print(f"[*] V7 core search: {kw} (max {GOOGLE_NUM_RESULTS})")
+        print(f"{'='*60}")
+        added = 0
+        try:
+            for r in tqdm(
+                iter_google_search(kw, num_results=GOOGLE_NUM_RESULTS),
+                desc=kw,
+                total=GOOGLE_NUM_RESULTS,
+            ):
+                if r.url in seen:
+                    continue
+                seen.add(r.url)
+                rows.append({
+                    "keyword": kw,
+                    "title": r.title,
+                    "url": r.url,
+                    "description": r.description,
+                    "domain": _domain(r.url),
+                })
+                added += 1
+        except Exception as e:
+            print(f"[!] Lỗi search '{kw}': {str(e)[:120]}")
+        per_keyword[kw] = added
+        print(f"[*] '{kw}': {added} kết quả mới (dedupe URL)")
     return pd.DataFrame(rows), per_keyword
+
+
+def load_v6_core_rows() -> pd.DataFrame:
+    """Đọc raw V6, giữ hàng query map về 5 keyword cốt lõi."""
+    if not RAW_FILE.exists():
+        return pd.DataFrame(columns=RAW_COLUMNS)
+    df = pd.read_csv(RAW_FILE, encoding="utf-8-sig")
+    if df.empty or "keyword" not in df.columns:
+        return pd.DataFrame(columns=RAW_COLUMNS)
+    mask = df["keyword"].apply(lambda q: resolve_core_keyword(str(q)) is not None)
+    out = df[mask].reset_index(drop=True)
+    if not out.empty:
+        print(f"[*] V7 fallback: {len(out)} hàng từ {RAW_FILE.name} (query cốt lõi)")
+    return out
+
+
+def merge_v7_sources(df_main: pd.DataFrame, df_core_crawl: pd.DataFrame, df_v6_core: pd.DataFrame) -> pd.DataFrame:
+    """Gộp nguồn V7: crawl chính + crawl 5 query + raw V6 cốt lõi (dedupe URL)."""
+    parts = []
+    for part in (df_main, df_core_crawl, df_v6_core):
+        if part is not None and not part.empty:
+            parts.append(part)
+    if not parts:
+        return pd.DataFrame(columns=RAW_COLUMNS)
+
+    merged = pd.concat(parts, ignore_index=True)
+    merged = merged.drop_duplicates(subset=["url"], keep="first")
+    mask = merged["keyword"].apply(lambda q: resolve_core_keyword(str(q)) is not None)
+    v7_df = merged[mask].reset_index(drop=True)
+    print(f"[*] V7 dataset: {len(v7_df)} kết quả (sau dedupe URL, lọc keyword cốt lõi)")
+    return v7_df
 
 
 def filter_relevant(df_raw):
@@ -126,9 +205,8 @@ def filter_valid(df_raw):
 
 
 def _write_empty_raw_diagnostic():
-    raw_file = DATA_DIR / "v6_google_results_raw.csv"
-    pd.DataFrame(columns=RAW_COLUMNS).to_csv(raw_file, index=False, encoding="utf-8-sig")
-    print(f"[*] Đã ghi file diagnostic (rỗng): {raw_file.name}")
+    pd.DataFrame(columns=RAW_COLUMNS).to_csv(RAW_FILE, index=False, encoding="utf-8-sig")
+    print(f"[*] Đã ghi file diagnostic (rỗng): {RAW_FILE.name}")
 
 
 def build_content_types(df_raw):
@@ -245,12 +323,11 @@ def build_top_keywords(df_raw):
     return df
 
 
-def _process_pipeline(df_raw, write_raw=True):
-    """Lọc + phân loại + xuất CSV phụ."""
+def _process_pipeline(df_raw, write_raw=True, v7_df: pd.DataFrame | None = None):
+    """Lọc + phân loại + xuất CSV V6 và V7."""
     if write_raw:
-        raw_file = DATA_DIR / "v6_google_results_raw.csv"
-        df_raw.to_csv(raw_file, index=False, encoding="utf-8-sig")
-        print(f"\n[OK] {len(df_raw)} kết quả → {raw_file.name}")
+        df_raw.to_csv(RAW_FILE, index=False, encoding="utf-8-sig")
+        print(f"\n[OK] {len(df_raw)} kết quả → {RAW_FILE.name}")
 
     _, summary = build_content_types(df_raw)
     print("\n=== PHÂN LOẠI NỘI DUNG (theo keyword) ===")
@@ -260,6 +337,12 @@ def _process_pipeline(df_raw, write_raw=True):
     core_df = build_quan_search_queries()
     top_df = build_top_keywords(df_raw)
 
+    if v7_df is None:
+        v7_df = merge_v7_sources(df_raw, pd.DataFrame(), pd.DataFrame())
+    v7_filtered = filter_relevant(v7_df.copy()) if not v7_df.empty else v7_df
+    v7_filtered = filter_valid(v7_filtered) if not v7_filtered.empty else v7_filtered
+    write_v7_outputs(v7_filtered)
+
     print("\n=== 5 KEYWORD CỐT LÕI CẦN SEARCH (Quan Vũ / Quan Công) ===")
     print(core_df[["stt", "keyword", "category"]].to_string(index=False))
 
@@ -268,34 +351,64 @@ def _process_pipeline(df_raw, write_raw=True):
         print("  (chưa có — chạy crawl đầy đủ hoặc xem v6_google_quan_search_queries.csv)")
     else:
         print(top_df.to_string(index=False))
-    print("\n[OK] Hoàn tất step6 — xem output/data/v6_google_*.csv")
+    print("\n[OK] Hoàn tất step6 — xem output/data/v6_google_*.csv và v7_google_*.csv")
+
+
+def _load_raw_for_reclassify() -> pd.DataFrame:
+    if not RAW_FILE.exists():
+        print(f"[!] Không tìm thấy {RAW_FILE.name} — chạy crawl đầy đủ trước.")
+        sys.exit(1)
+    df_raw = pd.read_csv(RAW_FILE, encoding="utf-8-sig")
+    if df_raw.empty:
+        print("[!] File raw rỗng.")
+        sys.exit(1)
+    return df_raw
 
 
 def reclassify_only():
     """Đọc raw CSV đã crawl, áp classifier mới, không search lại."""
     ensure_data_dir()
-    raw_file = DATA_DIR / "v6_google_results_raw.csv"
-    if not raw_file.exists():
-        print(f"[!] Không tìm thấy {raw_file.name} — chạy crawl đầy đủ trước.")
-        sys.exit(1)
-
-    df_raw = pd.read_csv(raw_file, encoding="utf-8-sig")
-    if df_raw.empty:
-        print("[!] File raw rỗng.")
-        sys.exit(1)
-
-    print(f"[*] Reclassify từ {raw_file.name} ({len(df_raw)} hàng)")
+    df_raw = _load_raw_for_reclassify()
+    print(f"[*] Reclassify từ {RAW_FILE.name} ({len(df_raw)} hàng)")
     df_raw = filter_valid(df_raw)
     if df_raw.empty:
         print("[!] Không còn kết quả sau lọc junk.")
         sys.exit(1)
 
-    _process_pipeline(df_raw, write_raw=True)
+    v7_df = merge_v7_sources(df_raw, pd.DataFrame(), load_v6_core_rows())
+    _process_pipeline(df_raw, write_raw=True, v7_df=v7_df)
+
+
+def v7_only():
+    """Chỉ build output V7 từ raw V6 có sẵn."""
+    ensure_data_dir()
+    df_raw = _load_raw_for_reclassify()
+    print(f"[*] V7-only từ {RAW_FILE.name} ({len(df_raw)} hàng)")
+    v7_df = merge_v7_sources(df_raw, pd.DataFrame(), pd.DataFrame())
+    v7_df = filter_relevant(v7_df)
+    if v7_df.empty:
+        print("[!] Không còn kết quả V7 sau lọc relevance.")
+        sys.exit(1)
+    v7_df = filter_valid(v7_df)
+    if v7_df.empty:
+        print("[!] Không còn kết quả V7 sau lọc junk.")
+        sys.exit(1)
+    write_v7_outputs(v7_df)
+    print("\n[OK] Hoàn tất V7-only — xem output/data/v7_google_*.csv")
 
 
 def main():
     ensure_data_dir()
-    df_raw, per_keyword = crawl_google()
+    df_v6_core_backup = load_v6_core_rows()
+
+    df_raw, per_keyword, seen_urls = crawl_google()
+
+    df_core, per_core = crawl_core_queries(seen_urls)
+    for kw, cnt in per_core.items():
+        per_keyword[kw] = per_keyword.get(kw, 0) + cnt
+    if not df_core.empty:
+        df_raw = pd.concat([df_raw, df_core], ignore_index=True)
+        df_raw = df_raw.drop_duplicates(subset=["url"], keep="first").reset_index(drop=True)
 
     print("\n=== TÓM TẮT KẾT QUẢ THEO KEYWORD (trước lọc) ===")
     for kw, cnt in per_keyword.items():
@@ -319,18 +432,26 @@ def main():
         _write_empty_raw_diagnostic()
         sys.exit(1)
 
-    _process_pipeline(df_raw, write_raw=True)
+    v7_df = merge_v7_sources(df_raw, pd.DataFrame(), df_v6_core_backup)
+    _process_pipeline(df_raw, write_raw=True, v7_df=v7_df)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Step 6 — khảo sát web search Tam quốc")
+    parser = argparse.ArgumentParser(description="Step 6 — khảo sát web search Tam quốc (V6 + V7)")
     parser.add_argument(
         "--reclassify-only",
         action="store_true",
         help="Phân loại lại từ v6_google_results_raw.csv (không crawl)",
     )
+    parser.add_argument(
+        "--v7-only",
+        action="store_true",
+        help="Chỉ build output V7 từ v6_google_results_raw.csv (không crawl)",
+    )
     args = parser.parse_args()
-    if args.reclassify_only:
+    if args.v7_only:
+        v7_only()
+    elif args.reclassify_only:
         reclassify_only()
     else:
         main()
