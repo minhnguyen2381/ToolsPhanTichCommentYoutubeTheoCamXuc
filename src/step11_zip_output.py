@@ -1,5 +1,6 @@
 """BƯỚC 11: Nén output/data + output/report thành file zip.
 
+Bao gồm toàn bộ CSV/PNG (v6_*, v7_google_*, report đa ngôn ngữ).
 Output: zip_exporter/output_YYYYMMDD_HHMMSS.zip (bên trong có data/ và report/).
 Xóa zip cũ hơn ZIP_RETENTION_DAYS (1–30 ngày) trong zip_exporter/.
 """
