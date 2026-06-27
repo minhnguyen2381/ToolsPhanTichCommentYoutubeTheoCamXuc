@@ -162,6 +162,41 @@ def _draw_bar_chart(
     print(f"  → [{locale}] {out.name}")
 
 
+def _draw_pie_chart(
+    df, label_col, value_col, locale, locale_dir, title_key, filename,
+    colors=None,
+):
+    txt = CHART_TEXT[locale]
+    sns.set_theme(style="whitegrid")
+    apply_locale_font(locale)
+
+    plt.figure(figsize=(10, 8))
+    
+    def autopct_fmt(pct):
+        if pct >= _PIE_SMALL_SLICE_THRESHOLD:
+            return f"{pct:.1f}%"
+        return ""
+        
+    _, _, autotexts = plt.pie(
+        df[value_col],
+        labels=df[label_col],
+        autopct=autopct_fmt,
+        startangle=90,
+        colors=colors,
+        wedgeprops=_PIE_WEDGE_PROPS,
+    )
+    for autotext in autotexts:
+        if autotext.get_text():
+            autotext.set_fontsize(10)
+            
+    plt.title(txt[title_key], fontsize=14)
+    plt.tight_layout()
+    out = locale_dir / filename
+    plt.savefig(out, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"  → [{locale}] {out.name}")
+
+
 def _plot_channels(df_ch, locale, locale_dir):
     if df_ch.empty:
         return
@@ -179,12 +214,12 @@ def _plot_channels(df_ch, locale, locale_dir):
     type_counts["label"] = type_counts["loai_tai_khoan"].apply(
         lambda s: account_type_label(s, locale)
     )
-    _draw_bar_chart(
+    type_counts = type_counts.sort_values("so_luong_video", ascending=False)
+    _draw_pie_chart(
         type_counts, "label", "so_luong_video",
         locale, locale_dir,
-        "channel_account_types_title", "channel_account_types_xlabel", "channel_account_types_ylabel",
+        "channel_account_types_title",
         "channel_account_types.png",
-        rotate=20,
     )
 
 
@@ -303,6 +338,11 @@ def _plot_top_keywords(df_kw, locale, locale_dir):
         plot_df["category_display"] = plot_df["category"].apply(
             lambda c: google_category_label(c, locale)
         )
+        plot_df = plot_df.groupby(["keyword_display", "category_display"], as_index=False)["ty_le_xuat_hien"].sum()
+    else:
+        plot_df = plot_df.groupby(["keyword_display"], as_index=False)["ty_le_xuat_hien"].sum()
+        
+    plot_df = plot_df.sort_values("ty_le_xuat_hien", ascending=False)
 
     sns.set_theme(style="whitegrid")
     apply_locale_font(locale)
