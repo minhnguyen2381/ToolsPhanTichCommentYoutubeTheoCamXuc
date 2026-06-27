@@ -22,3 +22,6 @@ output/
 zip_exporter/
 
 src/cookies.txt
+# ClaudeSkillCommon deploy (auto-added)
+.agents/
+.claude/
