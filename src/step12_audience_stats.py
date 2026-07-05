@@ -1,10 +1,11 @@
 """BƯỚC 13: Thống kê và Phân tích Người dùng mạng (Audience Stats).
-Đọc danh sách 3000 video đã lọc, lấy Top 50 video có view cao nhất,
-phân loại view vào các khoảng và sinh báo cáo DOCX, HTML.
+Lấy dữ liệu từ playlist v9, phân loại view, comment, like vào các khoảng
+và sinh báo cáo DOCX, HTML với 3 bảng độc lập.
 """
 
 import io
 import sys
+import os
 
 import pandas as pd
 from docx import Document
@@ -12,42 +13,99 @@ from docx.shared import Inches, Pt
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
 from paths import DATA_DIR, REPORT_DIR, ensure_data_dir, ensure_report_dir
+from youtube_client import list_playlist_videos, get_video_stats
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-BINS = [0, 500000, 1000000, 2000000, 3000000, 5000000, float('inf')]
-LABELS = [
-    "Dưới 500.000",
-    "500.000 - 1.000.000",
-    "1.000.000 - 2.000.000",
-    "2.000.000 - 3.000.000",
-    "3.000.000 - 5.000.000",
-    "Trên 5.000.000"
+PLAYLIST_ID = "PLlvlc45o3QQcwtas1taX7VlLyZ6Advf_3"
+PLAYLIST_CSV = DATA_DIR / "v9_playlist_videos.csv"
+
+# Bins & Labels for View
+VIEW_BINS = [-1, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, float('inf')]
+VIEW_LABELS = [
+    "0-10.000",
+    "10.000-20.000",
+    "20.000-30.000",
+    "30.000-40.000",
+    "40.000-50.000",
+    "50.000-60.000",
+    "60.000-70.000",
+    "70.000-80.000",
+    "80.000-90.000",
+    "90.000-100.000",
+    "Trên 100.000"
 ]
 
-def _resolve_input_file():
-    for name in (
-        "v5_3000_videos_filtered.csv",
-        "v5_3000_videos_cleaned.csv",
-        "v5_3000_videos_raw.csv",
-    ):
-        path = DATA_DIR / name
-        if path.exists():
-            return path
-    return None
+# Bins & Labels for Comment
+COMMENT_BINS = [-1, 0, 50, 100, 150, 200, 250, 300, float('inf')]
+COMMENT_LABELS = [
+    "0",
+    "1-50",
+    "51-100",
+    "101-150",
+    "151-200",
+    "201-250",
+    "251-300",
+    "300以上"
+]
 
-def normalize_view_column(df):
-    for col in ['view_count', 'viewCount', 'views', 'ViewCount']:
-        if col in df.columns:
-            # Chuyển về số (bỏ qua giá trị lỗi)
-            df['view_count'] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-            return df
-    # Nếu không tìm thấy, mặc định tạo cột 0
-    df['view_count'] = 0
+# Bins & Labels for Like
+LIKE_BINS = [-1, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, float('inf')]
+LIKE_LABELS = [
+    "0-500",
+    "500-1000",
+    "1000-1500",
+    "1500-2000",
+    "2000-2500",
+    "2500-3000",
+    "3000-3500",
+    "3500-4000",
+    "4000-4500",
+    "4500-5000",
+    "5000以上"
+]
+
+def fetch_playlist_data():
+    if PLAYLIST_CSV.exists():
+        print(f"[*] Đã thấy {PLAYLIST_CSV.name}, load cache...")
+        return pd.read_csv(PLAYLIST_CSV)
+    
+    print(f"[*] Đang lấy danh sách video từ playlist {PLAYLIST_ID}...")
+    video_ids = list_playlist_videos(PLAYLIST_ID)
+    print(f"[*] Tìm thấy {len(video_ids)} video trong playlist.")
+    
+    print("[*] Đang fetch thông tin chi tiết từng video...")
+    rows = get_video_stats(video_ids, sleep=0.2)
+    df = pd.DataFrame(rows)
+    
+    # Rename columns to match v5 schema
+    if not df.empty:
+        df = df.rename(columns={
+            "views": "view_count",
+            "likes": "like_count",
+            "comments": "comment_count"
+        })
+    
+    df.to_csv(PLAYLIST_CSV, index=False, encoding="utf-8-sig")
+    print(f"[OK] Đã lưu dữ liệu playlist ra {PLAYLIST_CSV.name}")
     return df
 
-def generate_reports(stats_df, total_videos, text_paragraph1, text_paragraph2):
+def normalize_column(df, possible_names, default_name):
+    for col in possible_names:
+        if col in df.columns:
+            df[default_name] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            return df
+    df[default_name] = 0
+    return df
+
+def normalize_metrics(df):
+    df = normalize_column(df, ['view_count', 'viewCount', 'views', 'ViewCount'], 'view_count')
+    df = normalize_column(df, ['comment_count', 'commentCount', 'comments', 'CommentCount'], 'comment_count')
+    df = normalize_column(df, ['like_count', 'likeCount', 'likes', 'LikeCount'], 'like_count')
+    return df
+
+def generate_reports(stats_view, stats_comment, stats_like, top_50_count, text_paragraph1, text_paragraph2):
     ensure_report_dir()
     
     # Generate HTML
@@ -80,24 +138,77 @@ def generate_reports(stats_df, total_videos, text_paragraph1, text_paragraph2):
             </tr>
     """
     
-    for _, row in stats_df.iterrows():
+    # View Table
+    for _, row in stats_view.iterrows():
+        lbl = row['Khoảng lượt xem video phổ biến (lượt)'].replace('\n', '<br><br>')
         html_content += f"""
             <tr>
-                <td>{row['Khoảng lượt xem video phổ biến (lượt)']}</td>
+                <td>{lbl}</td>
                 <td style="text-align:center;">{row['Số lượng video']}</td>
                 <td style="text-align:center;">{row['Tỷ lệ phần trăm']}</td>
             </tr>
         """
-        
     html_content += f"""
             <tr>
                 <td class="bold">Tổng cộng</td>
-                <td class="bold" style="text-align:center;">{total_videos}</td>
+                <td class="bold" style="text-align:center;">{top_50_count}</td>
                 <td class="bold" style="text-align:center;">100%</td>
             </tr>
         </table>
         
         <p class="text-content">{text_paragraph2}</p>
+        
+        <p class="bold">Bảng lượt comment</p>
+        <table>
+            <tr>
+                <th>Comment（条）</th>
+                <th>Số lượng（条）</th>
+                <th>Phần trăm</th>
+            </tr>
+    """
+    
+    # Comment Table
+    for _, row in stats_comment.iterrows():
+        html_content += f"""
+            <tr>
+                <td>{row['Comment（条）']}</td>
+                <td style="text-align:center;">{row['Số lượng（条）']}</td>
+                <td style="text-align:center;">{row['Phần trăm']}</td>
+            </tr>
+        """
+    html_content += f"""
+            <tr>
+                <td class="bold">Tổng cộng</td>
+                <td class="bold" style="text-align:center;">{top_50_count}</td>
+                <td class="bold" style="text-align:center;">100%</td>
+            </tr>
+        </table>
+        
+        <p class="bold">Bảng lượt like</p>
+        <table>
+            <tr>
+                <th>Like（个）</th>
+                <th>Số lượng（个）</th>
+                <th>Phần trăm</th>
+            </tr>
+    """
+    
+    # Like Table
+    for _, row in stats_like.iterrows():
+        html_content += f"""
+            <tr>
+                <td>{row['Like（个）']}</td>
+                <td style="text-align:center;">{row['Số lượng（个）']}</td>
+                <td style="text-align:center;">{row['Phần trăm']}</td>
+            </tr>
+        """
+    html_content += f"""
+            <tr>
+                <td class="bold">Tổng cộng</td>
+                <td class="bold" style="text-align:center;">{top_50_count}</td>
+                <td class="bold" style="text-align:center;">100%</td>
+            </tr>
+        </table>
     </body>
     </html>
     """
@@ -117,82 +228,159 @@ def generate_reports(stats_df, total_videos, text_paragraph1, text_paragraph2):
     font.size = Pt(12)
     
     # Heading
-    heading = doc.add_heading('3.4.5. Người dùng mạng ( phần 传播受众)', level=2)
+    doc.add_heading('3.4.5. Người dùng mạng ( phần 传播受众)', level=2)
     
     # Para 1
-    p1 = doc.add_paragraph(text_paragraph1)
+    doc.add_paragraph(text_paragraph1)
     
-    # Table Title
-    p_title = doc.add_paragraph("Bảng .... Top 50 video hot Youtube về Quan Vũ")
-    p_title.runs[0].bold = True
+    # Table View
+    p_title1 = doc.add_paragraph("Bảng .... Top 50 video hot Youtube về Quan Vũ")
+    p_title1.runs[0].bold = True
     
-    # Table
-    table = doc.add_table(rows=1, cols=3)
-    table.style = 'Table Grid'
-    hdr_cells = table.rows[0].cells
-    hdr_cells[0].text = 'Khoảng lượt xem video phổ biến (lượt)'
-    hdr_cells[1].text = 'Số lượng video'
-    hdr_cells[2].text = 'Tỷ lệ phần trăm'
+    t1 = doc.add_table(rows=1, cols=3)
+    t1.style = 'Table Grid'
+    h1 = t1.rows[0].cells
+    h1[0].text = 'Khoảng lượt xem video phổ biến (lượt)'
+    h1[0].paragraphs[0].runs[0].bold = True
+    h1[1].text = 'Số lượng video'
+    h1[1].paragraphs[0].runs[0].bold = True
+    h1[2].text = 'Tỷ lệ phần trăm'
+    h1[2].paragraphs[0].runs[0].bold = True
     
-    for _, row in stats_df.iterrows():
-        row_cells = table.add_row().cells
-        row_cells[0].text = str(row['Khoảng lượt xem video phổ biến (lượt)'])
-        row_cells[1].text = str(row['Số lượng video'])
-        row_cells[2].text = str(row['Tỷ lệ phần trăm'])
+    for _, row in stats_view.iterrows():
+        r = t1.add_row().cells
+        r[0].text = str(row['Khoảng lượt xem video phổ biến (lượt)'])
+        r[1].text = str(row['Số lượng video'])
+        r[2].text = str(row['Tỷ lệ phần trăm'])
         
-    # Footer row
-    footer_cells = table.add_row().cells
-    footer_cells[0].text = 'Tổng cộng'
-    footer_cells[0].paragraphs[0].runs[0].bold = True
-    footer_cells[1].text = str(total_videos)
-    footer_cells[1].paragraphs[0].runs[0].bold = True
-    footer_cells[2].text = '100%'
-    footer_cells[2].paragraphs[0].runs[0].bold = True
+    f1 = t1.add_row().cells
+    f1[0].text = 'Tổng cộng'
+    f1[0].paragraphs[0].runs[0].bold = True
+    f1[1].text = str(top_50_count)
+    f1[1].paragraphs[0].runs[0].bold = True
+    f1[2].text = '100%'
+    f1[2].paragraphs[0].runs[0].bold = True
+        
+    doc.add_paragraph()
+    doc.add_paragraph(text_paragraph2)
     
+    # Table Comment
+    p_title2 = doc.add_paragraph("Bảng lượt comment")
+    p_title2.runs[0].bold = True
+    
+    t2 = doc.add_table(rows=1, cols=3)
+    t2.style = 'Table Grid'
+    h2 = t2.rows[0].cells
+    h2[0].text = 'Comment（条）'
+    h2[0].paragraphs[0].runs[0].bold = True
+    h2[1].text = 'Số lượng（条）'
+    h2[1].paragraphs[0].runs[0].bold = True
+    h2[2].text = 'Phần trăm'
+    h2[2].paragraphs[0].runs[0].bold = True
+    
+    for _, row in stats_comment.iterrows():
+        r = t2.add_row().cells
+        r[0].text = str(row['Comment（条）'])
+        r[1].text = str(row['Số lượng（条）'])
+        r[2].text = str(row['Phần trăm'])
+
+    f2 = t2.add_row().cells
+    f2[0].text = 'Tổng cộng'
+    f2[0].paragraphs[0].runs[0].bold = True
+    f2[1].text = str(top_50_count)
+    f2[1].paragraphs[0].runs[0].bold = True
+    f2[2].text = '100%'
+    f2[2].paragraphs[0].runs[0].bold = True
+
     doc.add_paragraph()
     
-    # Para 2
-    p2 = doc.add_paragraph(text_paragraph2)
+    # Table Like
+    p_title3 = doc.add_paragraph("Bảng lượt like")
+    p_title3.runs[0].bold = True
     
+    t3 = doc.add_table(rows=1, cols=3)
+    t3.style = 'Table Grid'
+    h3 = t3.rows[0].cells
+    h3[0].text = 'Like（个）'
+    h3[0].paragraphs[0].runs[0].bold = True
+    h3[1].text = 'Số lượng（个）'
+    h3[1].paragraphs[0].runs[0].bold = True
+    h3[2].text = 'Phần trăm'
+    h3[2].paragraphs[0].runs[0].bold = True
+    
+    for _, row in stats_like.iterrows():
+        r = t3.add_row().cells
+        r[0].text = str(row['Like（个）'])
+        r[1].text = str(row['Số lượng（个）'])
+        r[2].text = str(row['Phần trăm'])
+        
+    f3 = t3.add_row().cells
+    f3[0].text = 'Tổng cộng'
+    f3[0].paragraphs[0].runs[0].bold = True
+    f3[1].text = str(top_50_count)
+    f3[1].paragraphs[0].runs[0].bold = True
+    f3[2].text = '100%'
+    f3[2].paragraphs[0].runs[0].bold = True
+        
     docx_path = REPORT_DIR / "vi" / "report_audience.docx"
     doc.save(str(docx_path))
     print(f"[OK] Đã lưu báo cáo DOCX tại {docx_path}")
 
+def calc_stats(df, col_name, bins, labels, col1_name, col2_name, col3_name):
+    # Lấy top 50
+    top_50 = df.nlargest(50, col_name).copy()
+    if len(top_50) == 0:
+        return pd.DataFrame(), 0
+        
+    # Phân nhóm
+    top_50['bin'] = pd.cut(top_50[col_name], bins=bins, labels=labels, right=True)
+    
+    stats = top_50['bin'].value_counts().reindex(labels, fill_value=0).reset_index()
+    stats.columns = [col1_name, col2_name]
+    
+    stats[col3_name] = (stats[col2_name] / len(top_50) * 100).apply(lambda x: f"{x:.1f}%" if x > 0 else "0%")
+        
+    return stats, len(top_50)
 
 def main():
     ensure_data_dir()
-    in_file = _resolve_input_file()
-    if in_file is None:
-        print("[!] Không tìm thấy file video. Chạy step1→step3 trước.")
+    df = fetch_playlist_data()
+    
+    if len(df) == 0:
+        print("[!] Playlist rỗng.")
         return
 
-    df = pd.read_csv(in_file)
-    print(f"[*] Đọc {len(df)} video từ {in_file.name}")
+    print(f"[*] Đọc {len(df)} video từ playlist.")
     
-    # Chuẩn hóa cột view
-    df = normalize_view_column(df)
+    df = normalize_metrics(df)
     
-    # Lấy top 50 video có view cao nhất
-    top_50 = df.nlargest(50, 'view_count').copy()
+    # View stats
+    stats_view, count_view = calc_stats(
+        df, 'view_count', VIEW_BINS, VIEW_LABELS, 
+        'Khoảng lượt xem video phổ biến (lượt)', 'Số lượng video', 'Tỷ lệ phần trăm'
+    )
     
-    if len(top_50) == 0:
-        print("[!] File dữ liệu không có video nào hoặc thiếu lượt xem.")
+    # Comment stats
+    stats_comment, count_comment = calc_stats(
+        df, 'comment_count', COMMENT_BINS, COMMENT_LABELS,
+        'Comment（条）', 'Số lượng（条）', 'Phần trăm'
+    )
+    
+    # Like stats
+    stats_like, count_like = calc_stats(
+        df, 'like_count', LIKE_BINS, LIKE_LABELS,
+        'Like（个）', 'Số lượng（个）', 'Phần trăm'
+    )
+    
+    if len(stats_view) == 0:
+        print("[!] Không có video nào để thống kê.")
         return
         
-    # Phân nhóm
-    top_50['view_bin'] = pd.cut(top_50['view_count'], bins=BINS, labels=LABELS, right=True)
-    
-    # Tính số lượng và tỷ lệ
-    stats = top_50['view_bin'].value_counts().reindex(LABELS, fill_value=0).reset_index()
-    stats.columns = ['Khoảng lượt xem video phổ biến (lượt)', 'Số lượng video']
-    stats['Tỷ lệ phần trăm'] = (stats['Số lượng video'] / len(top_50) * 100).apply(lambda x: f"{x:.1f}%" if x > 0 else "0%")
-    
     # Tính các biến nội suy cho đoạn văn bản
-    most_views_bin = stats.loc[stats['Số lượng video'].idxmax()]
-    most_views_range = most_views_bin['Khoảng lượt xem video phổ biến (lượt)']
+    most_views_bin = stats_view.loc[stats_view['Số lượng video'].idxmax()]
+    most_views_range = most_views_bin['Khoảng lượt xem video phổ biến (lượt)'].replace("\n", " hoặc ")
     most_views_pct = most_views_bin['Tỷ lệ phần trăm']
     
-    # Đoạn văn bản
     text_p1 = (
         "Trong thời đại Internet hiện nay, các mạng xã hội mới như YouTube, Facebook, Tiktok "
         "đã trở thành kênh chủ yếu để giới trẻ đương đại truyền tải và tiếp nhận thông tin. "
@@ -212,15 +400,25 @@ def main():
         "có số lượng lượt xem tương đối ấn tượng, thu hút được một lượng khán giả nhất định."
     )
     
-    print(f"[*] Thống kê top {len(top_50)} video:")
-    print(stats.to_string(index=False))
+    print(f"[*] Thống kê Top {count_view} theo View:")
+    print(stats_view.to_string(index=False))
     
     # Sinh báo cáo
-    generate_reports(stats, len(top_50), text_p1, text_p2)
+    generate_reports(stats_view, stats_comment, stats_like, count_view, text_p1, text_p2)
     
-    out_csv = DATA_DIR / "v9_audience_stats.csv"
-    stats.to_csv(out_csv, index=False, encoding='utf-8-sig')
-    print(f"[OK] Đã lưu thống kê raw tại {out_csv.name}")
+    out_csv_view = DATA_DIR / "v9_audience_stats_view.csv"
+    stats_view.to_csv(out_csv_view, index=False, encoding='utf-8-sig')
+    
+    out_csv_comment = DATA_DIR / "v9_audience_stats_comment.csv"
+    stats_comment.to_csv(out_csv_comment, index=False, encoding='utf-8-sig')
+    
+    out_csv_like = DATA_DIR / "v9_audience_stats_like.csv"
+    stats_like.to_csv(out_csv_like, index=False, encoding='utf-8-sig')
+    
+    print("[OK] Đã lưu thống kê raw tại:")
+    print(f"  - {out_csv_view.name}")
+    print(f"  - {out_csv_comment.name}")
+    print(f"  - {out_csv_like.name}")
 
 if __name__ == "__main__":
     main()
