@@ -17,7 +17,8 @@ STEPS = [
     ("Bước 9 — Phân tích sentiment", "step9_sentiment_analysis.py"),
     ("Bước 10 — Phân loại tính cách và vẽ biểu đồ", "step10_visualize_sentiment.py"),
     ("Bước 11 — Thống kê phản hồi người dùng mạng", "step11_v8_sentiment_stats.py"),
-    ("Bước 12 — Nén output thành zip", "step12_zip_output.py"),
+    ("Bước 12 — Thống kê người dùng mạng (Audience)", "step12_audience_stats.py"),
+    ("Bước 13 — Nén output thành zip", "step13_zip_output.py"),
 ]
 
 def main():
